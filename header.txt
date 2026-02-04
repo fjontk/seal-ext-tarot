@@ -1,10 +1,9 @@
 // ==UserScript==
-// @name         模板项目
-// @author       作者名
-// @version      1.0.0
-// @description  这是海豹的js扩展模板项目，请自行修改信息
-// @timestamp    1674477074
-// 2023/1/23
+// @name         塔罗牌AI解读
+// @author       无爱纪
+// @version      2.0.0
+// @description  抽取塔罗牌并用AI解读，支持单牌和三牌阵，完整78张牌
+// @timestamp    1706500000
 // @license      MIT
 // @homepageURL  https://github.com/sealdice/sealdice-js-template
 // ==/UserScript==
