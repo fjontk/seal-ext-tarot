@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         塔罗牌AI解读
+// @name         宠物养成
 // @author       无爱纪
-// @version      2.0.0
-// @description  抽取塔罗牌并用AI解读，支持单牌和三牌阵，完整78张牌
-// @timestamp    1706500000
+// @version      1.0.0
+// @description  宠物养成插件：领养宠物、上学学习技能、参加活动、粉丝养成
+// @timestamp    1739462400
 // @license      MIT
 // @homepageURL  https://github.com/sealdice/sealdice-js-template
 // ==/UserScript==
