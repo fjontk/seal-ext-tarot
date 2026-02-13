@@ -466,11 +466,9 @@ function registerCommands(ext: seal.ExtInfo) {
       case '绘画': {
         const stressRelief = Math.floor(GAME.PAINTING_STRESS_RELIEF * (1 + pet.skills.life.painting * 0.02));
         pet.stress = clamp(pet.stress - stressRelief, 0, 100);
-        const fanGain = Math.floor(GAME.PAINTING_CP_FAN_GAIN * (1 + pet.skills.life.painting * 0.03));
-        pet.fans.cpFans += fanGain;
         savePet(pet);
         seal.replyToSender(ctx, msg, formatText(TEXT.TALENT_PAINTING_SUCCESS, {
-          name: pet.name, stressRelief, fanGain,
+          name: pet.name, stressRelief,
           cost: GAME.TALENT_STAMINA_COST, stamina: pet.dailyFlags.stamina,
         }));
         break;

@@ -157,7 +157,6 @@ export const TEXT = {
   TALENT_PAINTING_SUCCESS:
     '{name}画了一幅超棒的饭绘！🎨\n' +
     '压力 -{stressRelief}\n' +
-    'CP粉 +{fanGain}\n' +
     '体力 -{cost}（剩余：{stamina}）',
   TALENT_LANGUAGE_SUCCESS:
     '{name}在海外社交媒体上营业啦！🌍\n' +
