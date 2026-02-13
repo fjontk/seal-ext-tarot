@@ -1,0 +1,273 @@
+// ============================================================
+// game_text.ts - 所有可客制化的文案模板
+// 使用 {placeholder} 占位符，由 formatText() 替换
+// ============================================================
+
+export const TEXT = {
+  // ======== 领养 ========
+  ADOPT_SUCCESS_LIST: [
+    '🎉 恭喜！你领养了一只{species}！\n取名为：{name}\n好好照顾它吧~',
+    '🐾 一只可爱的{species}加入了你的家庭！\n它的名字是：{name}\n请多多关照~',
+    '✨ 命运的邂逅！你和{species}相遇了！\n它叫{name}，今后请多指教~',
+    '🎊 欢迎新成员！{species}已经迫不及待想认识你了！\n名字：{name}',
+    '🌟 恭喜获得一只{species}！\n{name}正用期待的眼神看着你~',
+  ],
+  ADOPT_ALREADY_HAVE:
+    '你已经有一只宠物了，不能再领养啦~\n发送 .查看宠物 看看它吧！',
+
+  // ======== 查看宠物 ========
+  VIEW_AT_HOME_HEADER:
+    '🏠 {name}（{species}）正在家里',
+  VIEW_AT_HOME_STATUS:
+    '═══ 状态 ═══\n' +
+    '饱食度：{hunger}/100\n' +
+    '清洁度：{hygiene}/100\n' +
+    '压力值：{stress}/100\n' +
+    '等级：Lv.{level}\n' +
+    '体力：{stamina}/{maxStamina}',
+  VIEW_AT_HOME_SKILLS:
+    '═══ 舞台技能 ═══\n' +
+    'Vocal：{vocal}  Dance：{dance}  Rap：{rap}\n' +
+    '{stageEval}\n' +
+    '═══ 营业技能 ═══\n' +
+    '卖腐：{sellRot}  媚粉：{fanService}\n' +
+    '═══ 生活技能 ═══\n' +
+    '烹饪：{cooking}  文化：{culture}\n' +
+    '绘画：{painting}  外语：{language}',
+  VIEW_AT_HOME_FANS:
+    '═══ 粉丝 ═══\n' +
+    'CP粉：{cpFans}  唯粉：{soloFans}\n' +
+    '腐唯：{toxicFans}\n' +
+    '活动加成粉丝：{extraFans}\n' +
+    '总粉丝数：{totalFans}',
+
+  VIEW_AT_SCHOOL_HEADER:
+    '🏫 {name}（{species}）正在宠物学校\n课程：{course}',
+  VIEW_AT_SCHOOL_ACTIVITY_SOLO:
+    '💬 {activity}',
+  VIEW_AT_SCHOOL_ACTIVITY_PAIR:
+    '💬 {ownerName}的{petName}{activity}',
+  VIEW_AT_SCHOOL_STATUS:
+    '当前饱食度：{hunger}/100\n' +
+    '当前清洁度：{hygiene}/100\n' +
+    '当前压力值：{stress}/100',
+
+  // ======== 学校随机行为描述（单人互动） ========
+  SCHOOL_ACTIVITIES_SOLO: [
+    '正在独自舔毛',
+    '正在对着镜子练习Wink',
+    '正在认真听课做笔记',
+    '正在角落里打盹',
+    '正在跟老师撒娇要加分',
+    '正在给自己录练习视频',
+    '正在窗边发呆看风景',
+    '正在默默温习功课',
+  ],
+  // ======== 学校随机行为描述（双人互动） ========
+  SCHOOL_ACTIVITIES_PAIR: [
+    '正在和{partnerOwner}的{partnerName}一起玩耍',
+    '正在和{partnerOwner}的{partnerName}偷吃零食',
+    '正在和{partnerOwner}的{partnerName}排练舞蹈',
+    '正在围观{partnerOwner}的{partnerName}打架',
+    '正在和{partnerOwner}的{partnerName}比赛吃饭速度',
+    '正在给{partnerOwner}的{partnerName}梳毛',
+    '正在和{partnerOwner}的{partnerName}互相挠痒痒',
+    '正在和{partnerOwner}的{partnerName}分享小秘密',
+    '正在和{partnerOwner}的{partnerName}一起睡午觉',
+    '正在教{partnerOwner}的{partnerName}跳舞',
+  ],
+
+  // ======== 喂食 ========
+  FEED_SUCCESS:
+    '你给{name}喂了食物！\n' +
+    '🍖 饱食度 +{amount}（当前：{hunger}/100）\n' +
+    '💪 体力 -{cost}（剩余：{stamina}）',
+  FEED_NO_STAMINA:
+    '你今天太累了，没有体力喂食了…\n（剩余体力：{stamina}）',
+  FEED_AT_SCHOOL:
+    '{name}在学校呢，没法喂食哦！先用 .接宠物 把它接回来吧~',
+
+  // ======== 洗澡 ========
+  CLEAN_SUCCESS:
+    '你给{name}洗了个澡！洗得干干净净~\n' +
+    '🛁 清洁度 +{amount}（当前：{hygiene}/100）\n' +
+    '💪 体力 -{cost}（剩余：{stamina}）',
+  CLEAN_NO_STAMINA:
+    '你今天太累了，没有体力洗澡了…\n（剩余体力：{stamina}）',
+  CLEAN_AT_SCHOOL:
+    '{name}在学校呢，没法洗澡哦！先用 .接宠物 把它接回来吧~',
+
+  // ======== 送去上学 ========
+  SCHOOL_SEND_SUCCESS:
+    '{name}背着小书包出门啦！📚\n课程：{course}\n好好学习天天向上~',
+  SCHOOL_ALREADY_AT_SCHOOL:
+    '{name}已经在学校了！正在学习{course}呢~',
+  SCHOOL_INVALID_COURSE:
+    '没有这门课程哦！\n' +
+    '可选课程：\n' +
+    '【爱豆系】卖腐、vocal、dance、rap、媚粉\n' +
+    '【生活系】烹饪、文化、绘画、外语',
+
+  // ======== 接宠物 ========
+  PICKUP_SUCCESS:
+    '你接{name}回家啦！🏠\n' +
+    '在校时长：{hours}小时\n' +
+    '{course}技能 +{skillGain}\n' +
+    '等级 +{levelGain}\n' +
+    '清洁度变化：{hygieneDelta}\n' +
+    '压力变化：+{stressDelta}',
+  PICKUP_NOT_AT_SCHOOL:
+    '{name}不在学校哦，没法接~',
+
+  // ======== 报名活动 ========
+  EVENT_JOIN_SUCCESS:
+    '{name}已报名参加今晚的活动！🎤\n请期待表演结果~',
+  EVENT_ALREADY_JOINED:
+    '{name}今天已经报名了哦！',
+  EVENT_NOT_HOME:
+    '{name}还在学校呢，先接回来再报名吧~',
+
+  // ======== Event 结果 ========
+  EVENT_RESULT_GREAT_SUCCESS:
+    '🌟【大成功】🌟\n{name}的表演惊艳全场！粉丝们疯狂打call！\n额外粉丝 +{fans}',
+  EVENT_RESULT_SUCCESS:
+    '✨【成功】✨\n{name}的表演很棒！获得了观众的认可！\n额外粉丝 +{fans}',
+  EVENT_RESULT_NORMAL:
+    '📝【平平无奇】\n{name}的表演中规中矩，没有太大波澜。\n额外粉丝 +{fans}',
+  EVENT_RESULT_FAIL:
+    '💧【失败】\n{name}在表演中出了点小差错…\n额外粉丝 {fans}',
+  EVENT_RESULT_GREAT_FAIL:
+    '💥【大失败】\n{name}在舞台上摔了个大跟头！社死现场！\n额外粉丝 {fans}',
+  EVENT_SOLO:
+    '🎙️ {name}进行了Solo表演！',
+  EVENT_GROUP:
+    '🎶 {names}组成了临时团体一起表演！',
+
+  // ======== 才艺 ========
+  TALENT_COOKING_SUCCESS:
+    '{name}做了一顿美食！一边吃一边直播~🍳\n' +
+    '饱食度 +{hungerRestore}\n' +
+    '压力 -{stressRelief}\n' +
+    '粉丝 +{fanGain}\n' +
+    '体力 -{cost}（剩余：{stamina}）',
+  TALENT_CULTURE_SUCCESS:
+    '{name}写了一篇高情商小作文！📝\n' +
+    '成功引导了{converted}位腐唯回归正途\n' +
+    '体力 -{cost}（剩余：{stamina}）',
+  TALENT_PAINTING_SUCCESS:
+    '{name}画了一幅超棒的饭绘！🎨\n' +
+    '压力 -{stressRelief}\n' +
+    'CP粉 +{fanGain}\n' +
+    '体力 -{cost}（剩余：{stamina}）',
+  TALENT_LANGUAGE_SUCCESS:
+    '{name}在海外社交媒体上营业啦！🌍\n' +
+    '获得了国际Buff，下次Event成功率 +{buff}%\n' +
+    '体力 -{cost}（剩余：{stamina}）',
+  TALENT_NO_STAMINA:
+    '体力不足！需要{cost}点体力，当前只有{stamina}点。',
+  TALENT_AT_SCHOOL:
+    '{name}在学校呢，先接回来再使用才艺吧~',
+  TALENT_INVALID_TYPE:
+    '没有这种才艺类型！\n可选类型：烹饪、文化、绘画、外语',
+
+  // ======== 送礼 ========
+  GIFT_SUCCESS:
+    '你给{targetName}的宠物送了一份礼物：{giftDesc}\n' +
+    '{targetName}的宠物收到了来自你的心意！💝',
+  GIFT_ALREADY_SENT:
+    '你今天已经送过礼物了，明天再来吧~',
+  GIFT_TARGET_NO_PET:
+    '对方还没有宠物哦~',
+  GIFT_SELF:
+    '不能给自己的宠物送礼物啦！',
+  GIFT_NO_PET:
+    '你自己还没有宠物，先 .领养宠物 再来送礼吧~',
+
+  // ======== 改名 ========
+  RENAME_SUCCESS:
+    '宠物改名成功！✏️\n{oldName} → {newName}',
+  RENAME_EMPTY:
+    '请输入新名字！格式：.宠物改名 <新名字>',
+
+  // ======== 学校巡逻 ========
+  PATROL_RESULT:
+    '🔍 学校巡逻报告：\n' +
+    '在校宠物数量：{total}\n' +
+    '被遣返宠物：{expelled}\n' +
+    '{details}',
+  PATROL_EXPELLED_ITEM:
+    '  - {name}（清洁度：{hygiene}）已被遣返',
+  PATROL_ALL_CLEAN:
+    '  所有宠物都干干净净的！',
+  PATROL_NO_PETS:
+    '学校里目前没有宠物~',
+
+  // ======== 通用错误 ========
+  NO_PET:
+    '你还没有宠物哦！发送 .领养宠物 来领养一只吧~',
+  PRIVATE_ONLY:
+    '这个指令只能在私聊中使用哦！请私聊我~',
+  ADMIN_ONLY:
+    '这个指令需要管理员权限！',
+
+  // ======== 舞台评价 ========
+  EVAL_ACE:
+    '🌟 三项均衡发展，是ACE的苗子！',
+  EVAL_VOCAL:
+    '🎤 Vocal突出，是主唱担当呢！',
+  EVAL_DANCE:
+    '💃 Dance突出，是舞蹈担当呢！',
+  EVAL_RAP:
+    '🎵 Rap突出，是说唱担当呢！',
+  EVAL_ROOKIE:
+    '📝 还是新人，继续加油~',
+  EVAL_SHAME:
+    '😅 粉丝不少但实力堪忧…是皇族吗？',
+
+  // ======== 学校遣返通知 ========
+  SCHOOL_EXPELLED_NOTICE:
+    '⚠️ {name}因为太脏被学校遣返回家了！\n' +
+    '清洁度已降至{hygiene}，请记得给它洗澡！',
+
+  // ======== 待推送消息前缀 ========
+  PENDING_MSG_HEADER:
+    '📬 你不在的时候发生了以下事情：\n',
+
+  // ======== 宠物手册 ========
+  HELP_TEXT:
+    '═══ 🐾 宠物养成手册 🐾 ═══\n' +
+    '\n' +
+    '【基础指令】\n' +
+    '.领养宠物 - 随机领养一只宠物\n' +
+    '.查看宠物 - 查看宠物状态\n' +
+    '.宠物改名 <新名字> - 给宠物改名\n' +
+    '\n' +
+    '【养成指令】(仅限私聊)\n' +
+    '.喂食 - 给宠物喂食\n' +
+    '.洗澡 - 给宠物洗澡\n' +
+    '\n' +
+    '【学校指令】(仅限私聊)\n' +
+    '.送去上学 <课程名> - 送宠物去学校\n' +
+    '.接宠物 - 接宠物回家\n' +
+    '课程列表：卖腐/vocal/dance/rap/媚粉/烹饪/文化/绘画/外语\n' +
+    '\n' +
+    '【活动指令】(仅限私聊)\n' +
+    '.报名活动 - 报名参加每日Event\n' +
+    '.才艺 <类型> - 使用生活技能\n' +
+    '  类型：烹饪 / 文化 / 绘画 / 外语\n' +
+    '\n' +
+    '【社交指令】\n' +
+    '.赠送礼物 <@某人> <礼物描述> - 给别人的宠物送礼\n' +
+    '\n' +
+    '【管理指令】\n' +
+    '.学校巡逻 - (管理员) 检查学校卫生\n' +
+    '\n' +
+    '═══ 玩法说明 ═══\n' +
+    '· 每日体力有限，合理分配喂食/洗澡/才艺\n' +
+    '· 送宠物上学可以学习技能，但清洁度会下降\n' +
+    '· 每天可以报名一次活动，晚上结算表演结果\n' +
+    '· 舞台技能(vocal/dance/rap)影响表演成功率\n' +
+    '· 营业技能(卖腐/媚粉)影响粉丝结构\n' +
+    '· 生活技能可通过".才艺"指令使用\n' +
+    '· 压力过高会降低表演成功率，注意释放压力',
+};
