@@ -8,13 +8,13 @@ import {
   initStore, loadData, saveData,
   getPet, savePet, createPet, getFullPetName,
   updatePetStatus, getSchoolStatus, settleSchool,
-  onSkillGain, resetDaily, runSchoolPatrol,
+  resetDaily, runSchoolPatrol,
   createGroupEvent, joinGroupEvent, settleGroupEvent, getGroupEvents,
   getRandomSchoolPet, getRandomTwoSchoolPets, clearAllData,
 } from './store';
 import {
   formatText, randomItem, clamp, rollDice,
-  addSkill, evaluateStage,
+  evaluateStage,
 } from './utils';
 
 // ---- 插件常量 ----
@@ -125,7 +125,7 @@ function registerCommands(ext: seal.ExtInfo) {
     updatePetStatus(pet);
 
     const totalFans = pet.fans.cpFans + pet.fans.soloFans +
-      pet.fans.toxicFans + Math.max(0, pet.fans.extraFans);
+      Math.max(0, pet.fans.extraFans);
 
     if (pet.location === 'home') {
       const parts = [
@@ -346,22 +346,13 @@ function registerCommands(ext: seal.ExtInfo) {
       return seal.ext.newCmdExecuteResult(true);
     }
 
-    const courseName = pet.schoolData ? pet.schoolData.course : '未知';
-    const courseKey = pet.schoolData ? pet.schoolData.courseKey : undefined;
+    // settleSchool 内部统一完成：属性结算 + 技能增长 + 粉丝转化 + 存储
     const result = settleSchool(pet);
-
-    // 应用技能增长
-    if (courseKey && result.skillGain > 0) {
-      addSkill(pet, courseKey, result.skillGain);
-      onSkillGain(pet, courseKey, result.skillGain);
-    }
-    pet.schoolData = undefined;
-    savePet(pet);
 
     seal.replyToSender(ctx, msg, formatText(TEXT.PICKUP_SUCCESS, {
       name: getFullPetName(pet),
       hours: result.hoursAtSchool,
-      course: courseName,
+      course: result.courseName,
       skillGain: result.skillGain,
       levelGain: result.levelGain,
       hygieneDelta: result.hygieneDelta,
@@ -428,6 +419,9 @@ function registerCommands(ext: seal.ExtInfo) {
       case 'not_home':
         seal.replyToSender(ctx, msg, formatText(TEXT.EVENT_NOT_HOME, { name: getFullPetName(pet) }));
         break;
+      case 'too_stressed':
+        seal.replyToSender(ctx, msg, formatText(TEXT.EVENT_TOO_STRESSED, { name: getFullPetName(pet), stress: pet.stress }));
+        break;
       case 'no_pet':
         seal.replyToSender(ctx, msg, TEXT.NO_PET);
         break;
@@ -462,6 +456,8 @@ function registerCommands(ext: seal.ExtInfo) {
       return seal.ext.newCmdExecuteResult(true);
     }
     if (event.participants.length === 0) {
+      // 无人参加，删除活动并提示跑路
+      settleGroupEvent(groupId, eventName);
       seal.replyToSender(ctx, msg, formatText(TEXT.EVENT_SETTLE_EMPTY, { eventName }));
       return seal.ext.newCmdExecuteResult(true);
     }
@@ -473,8 +469,11 @@ function registerCommands(ext: seal.ExtInfo) {
     }
 
     const verdict = settlement.success ? TEXT.EVENT_SETTLE_VERDICT_SUCCESS : TEXT.EVENT_SETTLE_VERDICT_FAIL;
+    const eventTypeText = settlement.eventType === 'solo' ? TEXT.EVENT_TYPE_SOLO
+      : settlement.eventType === 'duo' ? TEXT.EVENT_TYPE_DUO : TEXT.EVENT_TYPE_MULTI;
     seal.replyToSender(ctx, msg, formatText(TEXT.EVENT_SETTLE_SUCCESS, {
       eventName: settlement.eventName,
+      eventType: eventTypeText,
       count: settlement.participantCount,
       totalFans: settlement.totalFans,
       perCapita: settlement.perCapitaFans,

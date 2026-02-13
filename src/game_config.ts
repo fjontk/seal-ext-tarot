@@ -96,10 +96,20 @@ export const GAME = {
   EVENT_FANS_GREAT_SUCCESS: 50,
   EVENT_FANS_SUCCESS: 20,
   EVENT_FANS_NORMAL: 5,
-  EVENT_FANS_FAIL: -10,
-  EVENT_FANS_GREAT_FAIL: -30,
+  EVENT_FANS_FAIL: -5,
+  EVENT_FANS_GREAT_FAIL: -15,
   /** 每次参加Event增加的压力 */
-  EVENT_STRESS_GAIN: 15,
+  EVENT_STRESS_GAIN: 10,
+  /** 额外粉丝最低下限 */
+  EXTRA_FANS_MIN: -50,
+
+  // -- 压力阈值 --
+  /** 压力超过此值禁止参加活动 */
+  STRESS_BLOCK_THRESHOLD: 200,
+  /** 压力超过此值成功率打五折 */
+  STRESS_SEVERE_THRESHOLD: 100,
+  /** 压力超过此值成功率打八折 */
+  STRESS_MILD_THRESHOLD: 50,
 
   // -- 才艺 (生活技能) --
   COOKING_HUNGER_RESTORE: 25,

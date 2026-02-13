@@ -166,12 +166,15 @@ export const TEXT = {
     '{name}已经报名了活动「{eventName}」哦！',
   EVENT_NOT_HOME:
     '{name}还在学校呢，先接回来再报名吧~',
+  EVENT_TOO_STRESSED:
+    '{name}压力太大了（{stress}/200），让它休息一下吧！\n💡 试试 .才艺 绘画 或 .才艺 烹饪 来减压~',
   EVENT_NOT_FOUND:
     '活动「{eventName}」不存在哦~\n使用 .查看活动 查看当前群的活动列表',
   EVENT_JOIN_EMPTY_NAME:
     '请输入活动名称！格式：.报名活动 <活动名>',
   EVENT_SETTLE_SUCCESS:
     '🎊 活动「{eventName}」结算完毕！\n' +
+    '{eventType}\n' +
     '参与宠物：{count}只\n' +
     '总招揽粉丝：{totalFans}\n' +
     '人均粉丝：{perCapita}\n' +
@@ -184,9 +187,15 @@ export const TEXT = {
   EVENT_SETTLE_NOT_CREATOR:
     '只有活动「{eventName}」的创建者 {creatorName} 才能结算哦！',
   EVENT_SETTLE_EMPTY:
-    '活动「{eventName}」还没有宠物报名，无法结算~',
+    '📢 活动「{eventName}」因为没有人参加，主办方跑路了…💨',
   EVENT_SETTLE_EMPTY_NAME:
     '请输入活动名称！格式：.活动结算 <活动名>',
+  EVENT_TYPE_SOLO:
+    '🎙️ 个人演唱会！唯粉加成中~',
+  EVENT_TYPE_DUO:
+    '🎶 双人演唱会！CP粉加成中~',
+  EVENT_TYPE_MULTI:
+    '🎪 多人演唱会！',
   EVENT_LIST_EMPTY:
     '📋 当前群还没有进行中的活动~\n使用 .创建活动 <活动名> 创建一个吧！',
   EVENT_LIST_HEADER:
@@ -291,7 +300,7 @@ export const TEXT = {
     '【基础指令】\n' +
     '.领养宠物 - 随机领养一只宠物\n' +
     '.查看宠物 - 查看宠物状态\n' +
-    '.宠物改名 <新名字> - 给宠物改名（改的是"xxx的物种"中的xxx部分）\n' +
+    '.宠物改名 <新名字> - 给宠物改名\n' +
     '\n' +
     '【养成指令】(仅限私聊)\n' +
     '.喂食 - 给宠物喂食\n' +

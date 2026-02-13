@@ -75,7 +75,7 @@ export function evaluateStage(pet: Pet): string {
 
   // 皇族：粉丝多技能低
   const totalFans =
-    pet.fans.cpFans + pet.fans.soloFans + pet.fans.toxicFans + pet.fans.extraFans;
+    pet.fans.cpFans + pet.fans.soloFans + Math.max(0, pet.fans.extraFans);
   if (totalFans > 200 && avg < 10) return TEXT.EVAL_SHAME;
 
   // 方差判定

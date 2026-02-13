@@ -8,8 +8,7 @@ import { GAME, SkillKey, SpeciesConfig } from './game_config';
 export interface Pet {
   id: string;              // UserID，作为唯一标识
   name: string;            // 主人名（用于组成"xxx的物种"格式的宠物名）
-  species: string;         // 当前物种名（可能会变化）
-  originalSpecies: string; // 领养时的物种名（用于组成宠物名，永不改变）
+  species: string;         // 物种名（领养时确定，不再改变）
   speciesConversionRate: number; // 歪屁股cp粉转化率（领养时由物种决定）
 
   // 状态
@@ -143,7 +142,7 @@ export function savePet(pet: Pet): void {
 
 /** 获取宠物的完整名称（格式：xxx的物种） */
 export function getFullPetName(pet: Pet): string {
-  return `${pet.name}的${pet.originalSpecies}`;
+  return `${pet.name}的${pet.species}`;
 }
 
 /** 创建新宠物 */
@@ -156,7 +155,6 @@ export function createPet(
     id: userId,
     name: ownerName,            // 存储主人名，宠物全名由 getFullPetName 生成
     species: species.name,
-    originalSpecies: species.name, // 记录领养时的物种，永不改变
     speciesConversionRate: species.conversionRate,
     hunger: GAME.INITIAL_HUNGER,
     hygiene: GAME.INITIAL_HYGIENE,
@@ -208,15 +206,16 @@ export function getSchoolStatus(pet: Pet): {
   const hours = (Date.now() - pet.schoolData.startTime) / (1000 * 60 * 60);
   return {
     hygiene: Math.floor(pet.hygiene - hours * GAME.HYGIENE_DECAY_PER_HOUR_SCHOOL),
-    stress: Math.min(100, Math.floor(pet.stress + hours * GAME.STRESS_GAIN_PER_HOUR_SCHOOL)),
+    stress: Math.floor(pet.stress + hours * GAME.STRESS_GAIN_PER_HOUR_SCHOOL),
     skillGain: parseFloat((hours * GAME.SKILL_GAIN_PER_HOUR).toFixed(1)),
     levelGain: parseFloat((hours * GAME.LEVEL_GAIN_PER_HOUR).toFixed(2)),
     hoursAtSchool: parseFloat(hours.toFixed(1)),
   };
 }
 
-/** 结算学校并接回宠物，返回增长详情 */
+/** 结算学校并接回宠物，返回增长详情（含技能增长和粉丝转化） */
 export function settleSchool(pet: Pet): {
+  courseName: string;
   skillGain: number;
   levelGain: number;
   hygieneDelta: number;
@@ -226,12 +225,20 @@ export function settleSchool(pet: Pet): {
   const status = getSchoolStatus(pet);
   const hygieneDelta = status.hygiene - pet.hygiene;
   const stressDelta = status.stress - pet.stress;
+  const courseName = pet.schoolData ? pet.schoolData.course : '未知';
 
-  // 应用数值
+  // 应用属性数值
   pet.hygiene = status.hygiene;
   pet.stress = status.stress;
   pet.level = parseFloat((pet.level + status.levelGain).toFixed(2));
+
+  // 应用技能增长 + 粉丝转化（统一在此处完成）
+  if (pet.schoolData && status.skillGain > 0) {
+    applySkillGainDirect(pet, pet.schoolData.courseKey, status.skillGain);
+  }
+
   pet.location = 'home';
+  pet.schoolData = undefined;
   pet.lastInteractionTime = Date.now();
 
   // 从学校注册表移除
@@ -241,6 +248,7 @@ export function settleSchool(pet: Pet): {
   saveData(data);
 
   return {
+    courseName,
     skillGain: status.skillGain,
     levelGain: status.levelGain,
     hygieneDelta,
@@ -315,10 +323,8 @@ export function getRandomTwoSchoolPets(): { pets: Pet[]; count: number } {
 export function resetDaily(): void {
   const data = loadData();
   for (const userId of Object.keys(data.pets)) {
-    data.pets[userId].dailyFlags = {
-      stamina: GAME.MAX_STAMINA,
-      nextEventBuff: 0,
-    };
+    // 只重置体力，nextEventBuff 不清零（由活动结算时消费）
+    data.pets[userId].dailyFlags.stamina = GAME.MAX_STAMINA;
   }
   data.lastDailyReset = Date.now();
   saveData(data);
@@ -343,15 +349,14 @@ export function runSchoolPatrol(hygieneLimit: number): PatrolResult {
 
     const status = getSchoolStatus(pet);
     if (status.hygiene < hygieneLimit) {
-      // 结算并遣返
-      const schoolResult = getSchoolStatus(pet);
-      pet.hygiene = schoolResult.hygiene;
-      pet.stress = schoolResult.stress;
-      pet.level = parseFloat((pet.level + schoolResult.levelGain).toFixed(2));
+      // 结算并遣返（复用已有的 status，避免二次调用）
+      pet.hygiene = status.hygiene;
+      pet.stress = status.stress;
+      pet.level = parseFloat((pet.level + status.levelGain).toFixed(2));
 
       // 应用技能增长
       if (pet.schoolData) {
-        const skillDelta = schoolResult.skillGain;
+        const skillDelta = status.skillGain;
         // addSkill 和 onSkillGain 在 utils 中，这里直接操作避免循环引用
         applySkillGainDirect(pet, pet.schoolData.courseKey, skillDelta);
       }
@@ -415,7 +420,7 @@ export function joinGroupEvent(
   groupId: string,
   eventName: string,
   userId: string,
-): 'ok' | 'not_found' | 'already_joined' | 'not_home' | 'no_pet' {
+): 'ok' | 'not_found' | 'already_joined' | 'not_home' | 'no_pet' | 'too_stressed' {
   const data = loadData();
   const events = data.groupEvents[groupId];
   if (!events || !events[eventName]) return 'not_found';
@@ -423,6 +428,7 @@ export function joinGroupEvent(
   const pet = data.pets[userId];
   if (!pet) return 'no_pet';
   if (pet.location === 'school') return 'not_home';
+  if (pet.stress >= GAME.STRESS_BLOCK_THRESHOLD) return 'too_stressed';
 
   const event = events[eventName];
   if (event.participants.includes(userId)) return 'already_joined';
@@ -445,6 +451,7 @@ export interface GroupEventSettlement {
   perCapitaFans: number;
   participantCount: number;
   success: boolean;
+  eventType: 'solo' | 'duo' | 'multi';
   results: EventResult[];
 }
 
@@ -457,6 +464,9 @@ export function settleGroupEvent(groupId: string, eventName: string): GroupEvent
   const event = events[eventName];
   const results: EventResult[] = [];
   let totalFans = 0;
+  const participantCount = event.participants.length;
+  const eventType: 'solo' | 'duo' | 'multi' =
+    participantCount <= 1 ? 'solo' : participantCount === 2 ? 'duo' : 'multi';
 
   for (const petId of event.participants) {
     const pet = data.pets[petId];
@@ -466,7 +476,9 @@ export function settleGroupEvent(groupId: string, eventName: string): GroupEvent
     const stageAvg = (pet.skills.vocal + pet.skills.dance + pet.skills.rap) / 3;
     let successChance = Math.min(95, stageAvg * 2 + 10);
     successChance += pet.dailyFlags.nextEventBuff * 100;
-    if (pet.stress > 50) {
+    if (pet.stress > GAME.STRESS_SEVERE_THRESHOLD) {
+      successChance *= 0.5;
+    } else if (pet.stress > GAME.STRESS_MILD_THRESHOLD) {
       successChance *= 0.8;
     }
 
@@ -491,14 +503,28 @@ export function settleGroupEvent(groupId: string, eventName: string): GroupEvent
       fansDelta = GAME.EVENT_FANS_GREAT_FAIL;
     }
 
-    // 应用结果
-    pet.fans.extraFans += fansDelta;
-    pet.stress = Math.min(100, pet.stress + GAME.EVENT_STRESS_GAIN);
+    // 根据活动类型分配粉丝
+    switch (eventType) {
+      case 'solo':
+        pet.fans.soloFans = Math.max(0, pet.fans.soloFans + fansDelta);
+        break;
+      case 'duo':
+        pet.fans.cpFans = Math.max(0, pet.fans.cpFans + fansDelta);
+        break;
+      case 'multi':
+        pet.fans.extraFans = Math.max(GAME.EXTRA_FANS_MIN, pet.fans.extraFans + fansDelta);
+        break;
+    }
+    pet.stress += GAME.EVENT_STRESS_GAIN;
     pet.dailyFlags.nextEventBuff = 0;
 
     // 个人通知写入 pendingMessages
-    const resultText = formatEventResult(getFullPetName(pet), result, fansDelta);
-    pet.pendingMessages.push(`📢 活动「${eventName}」已结算！\n${resultText}`);
+    const typeLabel = eventType === 'solo' ? '🎙️个人演唱会'
+      : eventType === 'duo' ? '🎶双人演唱会' : '🎪多人演唱会';
+    const fansLabel = eventType === 'solo' ? '唯粉'
+      : eventType === 'duo' ? 'CP粉' : '额外粉丝';
+    const resultText = formatEventResult(getFullPetName(pet), result, fansDelta, fansLabel);
+    pet.pendingMessages.push(`📢 活动「${eventName}」（${typeLabel}）已结算！\n${resultText}`);
 
     results.push({ petId, petName: getFullPetName(pet), result, fansDelta });
     totalFans += fansDelta;
@@ -519,22 +545,23 @@ export function settleGroupEvent(groupId: string, eventName: string): GroupEvent
     perCapitaFans: parseFloat(perCapita.toFixed(1)),
     participantCount: count,
     success: perCapita > 0,
+    eventType,
     results,
   };
 }
 
-function formatEventResult(name: string, result: EventResult['result'], fans: number): string {
+function formatEventResult(name: string, result: EventResult['result'], fans: number, fansLabel: string): string {
   switch (result) {
     case 'great_success':
-      return `🌟【大成功】🌟 ${name}的表演惊艳全场！额外粉丝 +${fans}`;
+      return `🌟【大成功】🌟 ${name}的表演惊艳全场！${fansLabel} +${fans}`;
     case 'success':
-      return `✨【成功】✨ ${name}的表演很棒！额外粉丝 +${fans}`;
+      return `✨【成功】✨ ${name}的表演很棒！${fansLabel} +${fans}`;
     case 'normal':
-      return `📝【平平无奇】 ${name}的表演中规中矩。额外粉丝 +${fans}`;
+      return `📝【平平无奇】 ${name}的表演中规中矩。${fansLabel} +${fans}`;
     case 'fail':
-      return `💧【失败】 ${name}出了点小差错…额外粉丝 ${fans}`;
+      return `💧【失败】 ${name}出了点小差错…${fansLabel} ${fans}`;
     case 'great_fail':
-      return `💥【大失败】 ${name}在舞台上摔了个大跟头！额外粉丝 ${fans}`;
+      return `💥【大失败】 ${name}在舞台上摔了个大跟头！${fansLabel} ${fans}`;
   }
 }
 
