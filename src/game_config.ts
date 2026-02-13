@@ -106,7 +106,6 @@ export const GAME = {
   COOKING_STRESS_RELIEF: 10,
   COOKING_FAN_GAIN: 5,
   PAINTING_STRESS_RELIEF: 35,
-  PAINTING_CP_FAN_GAIN: 15,
   /** 文化消解腐唯数量 */
   CULTURE_TOXIC_CONVERT: 10,
   /** 外语带来的Event成功率加成 (0.15 = 15%) */
