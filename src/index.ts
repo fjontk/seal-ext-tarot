@@ -6,7 +6,7 @@ import { SPECIES_LIST, GAME, findCourse } from './game_config';
 import { TEXT } from './game_text';
 import {
   initStore, loadData, saveData,
-  getPet, savePet, createPet,
+  getPet, savePet, createPet, getFullPetName,
   updatePetStatus, getSchoolStatus, settleSchool,
   onSkillGain, resetDaily, runSchoolPatrol, settleEvents,
   getRandomSchoolPet, getRandomTwoSchoolPets, clearAllData,
@@ -104,7 +104,7 @@ function registerCommands(ext: seal.ExtInfo) {
     const adoptText = randomItem(TEXT.ADOPT_SUCCESS_LIST);
     seal.replyToSender(ctx, msg, formatText(adoptText, {
       species: pet.species,
-      name: pet.name,
+      name: getFullPetName(pet),
     }));
     return seal.ext.newCmdExecuteResult(true);
   };
@@ -129,7 +129,7 @@ function registerCommands(ext: seal.ExtInfo) {
 
     if (pet.location === 'home') {
       const parts = [
-        formatText(TEXT.VIEW_AT_HOME_HEADER, { name: pet.name, species: pet.species }),
+        formatText(TEXT.VIEW_AT_HOME_HEADER, { name: getFullPetName(pet), species: pet.species }),
         formatText(TEXT.VIEW_AT_HOME_STATUS, {
           hunger: pet.hunger, hygiene: pet.hygiene, stress: pet.stress,
           level: pet.level, stamina: pet.dailyFlags.stamina, maxStamina: GAME.MAX_STAMINA,
@@ -157,17 +157,16 @@ function registerCommands(ext: seal.ExtInfo) {
       if (partner && Math.random() > 0.4) {
         // 60%概率双人互动
         const pairActivity = randomItem(TEXT.SCHOOL_ACTIVITIES_PAIR);
-        // 从宠物名字中提取主人名
-        const partnerOwnerMatch = partner.name.match(/^(.+?)的/);
-        const partnerOwner = partnerOwnerMatch ? partnerOwnerMatch[1] : '某人';
-        const partnerName = partner.name.replace(/^.+?的/, '');
+        // 从宠物名字中提取主人名（直接使用 partner.name 即为主人名）
+        const partnerOwner = partner.name;
+        const partnerSpecies = partner.originalSpecies;
         
         activityText = formatText(TEXT.VIEW_AT_SCHOOL_ACTIVITY_PAIR, {
           ownerName: ctx.player.name,
-          petName: pet.name,
+          petName: getFullPetName(pet),
           activity: formatText(pairActivity, {
             partnerOwner,
-            partnerName,
+            partnerName: partnerSpecies,
           }),
         });
       } else {
@@ -178,7 +177,7 @@ function registerCommands(ext: seal.ExtInfo) {
       
       const parts = [
         formatText(TEXT.VIEW_AT_SCHOOL_HEADER, {
-          name: pet.name, species: pet.species,
+          name: getFullPetName(pet), species: pet.species,
           course: pet.schoolData ? pet.schoolData.course : '未知',
         }),
         activityText,
@@ -197,7 +196,7 @@ function registerCommands(ext: seal.ExtInfo) {
   // ---- 3. 宠物改名 ----
   const cmdRename = seal.ext.newCmdItemInfo();
   cmdRename.name = '宠物改名';
-  cmdRename.help = '给宠物改名。格式：.宠物改名 <新名字>';
+  cmdRename.help = '给宠物改名（修改主人名部分）。格式：.宠物改名 <新名字>';
   cmdRename.solve = (ctx, msg, cmdArgs) => {
     const pet = requirePet(ctx, msg);
     if (!pet) return seal.ext.newCmdExecuteResult(true);
@@ -208,11 +207,11 @@ function registerCommands(ext: seal.ExtInfo) {
       return seal.ext.newCmdExecuteResult(true);
     }
 
-    const oldName = pet.name;
+    const oldFullName = getFullPetName(pet);
     pet.name = newName.trim();
     savePet(pet);
 
-    seal.replyToSender(ctx, msg, formatText(TEXT.RENAME_SUCCESS, { oldName, newName: pet.name }));
+    seal.replyToSender(ctx, msg, formatText(TEXT.RENAME_SUCCESS, { oldName: oldFullName, newName: getFullPetName(pet) }));
     return seal.ext.newCmdExecuteResult(true);
   };
   ext.cmdMap['宠物改名'] = cmdRename;
@@ -227,7 +226,7 @@ function registerCommands(ext: seal.ExtInfo) {
     if (!pet) return seal.ext.newCmdExecuteResult(true);
 
     if (pet.location === 'school') {
-      seal.replyToSender(ctx, msg, formatText(TEXT.FEED_AT_SCHOOL, { name: pet.name }));
+      seal.replyToSender(ctx, msg, formatText(TEXT.FEED_AT_SCHOOL, { name: getFullPetName(pet) }));
       return seal.ext.newCmdExecuteResult(true);
     }
 
@@ -246,7 +245,7 @@ function registerCommands(ext: seal.ExtInfo) {
     savePet(pet);
 
     seal.replyToSender(ctx, msg, formatText(TEXT.FEED_SUCCESS, {
-      name: pet.name, food: '食物', amount,
+      name: getFullPetName(pet), food: '食物', amount,
       hunger: pet.hunger, cost: GAME.FEED_STAMINA_COST,
       stamina: pet.dailyFlags.stamina,
     }));
@@ -264,7 +263,7 @@ function registerCommands(ext: seal.ExtInfo) {
     if (!pet) return seal.ext.newCmdExecuteResult(true);
 
     if (pet.location === 'school') {
-      seal.replyToSender(ctx, msg, formatText(TEXT.CLEAN_AT_SCHOOL, { name: pet.name }));
+      seal.replyToSender(ctx, msg, formatText(TEXT.CLEAN_AT_SCHOOL, { name: getFullPetName(pet) }));
       return seal.ext.newCmdExecuteResult(true);
     }
 
@@ -283,7 +282,7 @@ function registerCommands(ext: seal.ExtInfo) {
     savePet(pet);
 
     seal.replyToSender(ctx, msg, formatText(TEXT.CLEAN_SUCCESS, {
-      name: pet.name, amount,
+      name: getFullPetName(pet), amount,
       hygiene: pet.hygiene, cost: GAME.CLEAN_STAMINA_COST,
       stamina: pet.dailyFlags.stamina,
     }));
@@ -302,7 +301,7 @@ function registerCommands(ext: seal.ExtInfo) {
 
     if (pet.location === 'school') {
       seal.replyToSender(ctx, msg, formatText(TEXT.SCHOOL_ALREADY_AT_SCHOOL, {
-        name: pet.name, course: pet.schoolData ? pet.schoolData.course : '未知',
+        name: getFullPetName(pet), course: pet.schoolData ? pet.schoolData.course : '未知',
       }));
       return seal.ext.newCmdExecuteResult(true);
     }
@@ -331,7 +330,7 @@ function registerCommands(ext: seal.ExtInfo) {
     saveData(data);
 
     seal.replyToSender(ctx, msg, formatText(TEXT.SCHOOL_SEND_SUCCESS, {
-      name: pet.name, course: course.name,
+      name: getFullPetName(pet), course: course.name,
     }));
     return seal.ext.newCmdExecuteResult(true);
   };
@@ -347,7 +346,7 @@ function registerCommands(ext: seal.ExtInfo) {
     if (!pet) return seal.ext.newCmdExecuteResult(true);
 
     if (pet.location !== 'school') {
-      seal.replyToSender(ctx, msg, formatText(TEXT.PICKUP_NOT_AT_SCHOOL, { name: pet.name }));
+      seal.replyToSender(ctx, msg, formatText(TEXT.PICKUP_NOT_AT_SCHOOL, { name: getFullPetName(pet) }));
       return seal.ext.newCmdExecuteResult(true);
     }
 
@@ -364,7 +363,7 @@ function registerCommands(ext: seal.ExtInfo) {
     savePet(pet);
 
     seal.replyToSender(ctx, msg, formatText(TEXT.PICKUP_SUCCESS, {
-      name: pet.name,
+      name: getFullPetName(pet),
       hours: result.hoursAtSchool,
       course: courseName,
       skillGain: result.skillGain,
@@ -386,12 +385,12 @@ function registerCommands(ext: seal.ExtInfo) {
     if (!pet) return seal.ext.newCmdExecuteResult(true);
 
     if (pet.location === 'school') {
-      seal.replyToSender(ctx, msg, formatText(TEXT.EVENT_NOT_HOME, { name: pet.name }));
+      seal.replyToSender(ctx, msg, formatText(TEXT.EVENT_NOT_HOME, { name: getFullPetName(pet) }));
       return seal.ext.newCmdExecuteResult(true);
     }
 
     if (pet.dailyFlags.eventJoined) {
-      seal.replyToSender(ctx, msg, formatText(TEXT.EVENT_ALREADY_JOINED, { name: pet.name }));
+      seal.replyToSender(ctx, msg, formatText(TEXT.EVENT_ALREADY_JOINED, { name: getFullPetName(pet) }));
       return seal.ext.newCmdExecuteResult(true);
     }
 
@@ -404,7 +403,7 @@ function registerCommands(ext: seal.ExtInfo) {
     data.pets[pet.id] = pet;
     saveData(data);
 
-    seal.replyToSender(ctx, msg, formatText(TEXT.EVENT_JOIN_SUCCESS, { name: pet.name }));
+    seal.replyToSender(ctx, msg, formatText(TEXT.EVENT_JOIN_SUCCESS, { name: getFullPetName(pet) }));
     return seal.ext.newCmdExecuteResult(true);
   };
   ext.cmdMap['报名活动'] = cmdEventJoin;
@@ -419,7 +418,7 @@ function registerCommands(ext: seal.ExtInfo) {
     if (!pet) return seal.ext.newCmdExecuteResult(true);
 
     if (pet.location === 'school') {
-      seal.replyToSender(ctx, msg, formatText(TEXT.TALENT_AT_SCHOOL, { name: pet.name }));
+      seal.replyToSender(ctx, msg, formatText(TEXT.TALENT_AT_SCHOOL, { name: getFullPetName(pet) }));
       return seal.ext.newCmdExecuteResult(true);
     }
 
@@ -443,7 +442,7 @@ function registerCommands(ext: seal.ExtInfo) {
         pet.fans.soloFans += GAME.COOKING_FAN_GAIN;
         savePet(pet);
         seal.replyToSender(ctx, msg, formatText(TEXT.TALENT_COOKING_SUCCESS, {
-          name: pet.name, hungerRestore: restore,
+          name: getFullPetName(pet), hungerRestore: restore,
           stressRelief: GAME.COOKING_STRESS_RELIEF, fanGain: GAME.COOKING_FAN_GAIN,
           cost: GAME.TALENT_STAMINA_COST, stamina: pet.dailyFlags.stamina,
         }));
@@ -458,7 +457,7 @@ function registerCommands(ext: seal.ExtInfo) {
         pet.fans.soloFans += Math.ceil(convertAmount / 2);
         savePet(pet);
         seal.replyToSender(ctx, msg, formatText(TEXT.TALENT_CULTURE_SUCCESS, {
-          name: pet.name, converted: convertAmount,
+          name: getFullPetName(pet), converted: convertAmount,
           cost: GAME.TALENT_STAMINA_COST, stamina: pet.dailyFlags.stamina,
         }));
         break;
@@ -468,7 +467,7 @@ function registerCommands(ext: seal.ExtInfo) {
         pet.stress = clamp(pet.stress - stressRelief, 0, 100);
         savePet(pet);
         seal.replyToSender(ctx, msg, formatText(TEXT.TALENT_PAINTING_SUCCESS, {
-          name: pet.name, stressRelief,
+          name: getFullPetName(pet), stressRelief,
           cost: GAME.TALENT_STAMINA_COST, stamina: pet.dailyFlags.stamina,
         }));
         break;
@@ -478,7 +477,7 @@ function registerCommands(ext: seal.ExtInfo) {
         pet.dailyFlags.nextEventBuff = GAME.LANGUAGE_EVENT_BUFF * (1 + pet.skills.life.language * 0.02);
         savePet(pet);
         seal.replyToSender(ctx, msg, formatText(TEXT.TALENT_LANGUAGE_SUCCESS, {
-          name: pet.name, buff: buffPercent,
+          name: getFullPetName(pet), buff: buffPercent,
           cost: GAME.TALENT_STAMINA_COST, stamina: pet.dailyFlags.stamina,
         }));
         break;
@@ -549,7 +548,7 @@ function registerCommands(ext: seal.ExtInfo) {
 
     // 给目标宠物添加待推送消息
     targetPet.pendingMessages.push(
-      `🎁 ${ctx.player.name}给你的${targetPet.name}送了礼物：${giftDesc}`
+      `🎁 ${ctx.player.name}给你的${getFullPetName(targetPet)}送了礼物：${giftDesc}`
     );
     savePet(targetPet);
 
@@ -629,7 +628,7 @@ function registerCommands(ext: seal.ExtInfo) {
       const pet = pets[0];
       const activity = randomItem(TEXT.VISIT_SCHOOL_SOLO_ACTIVITIES);
       seal.replyToSender(ctx, msg, formatText(TEXT.VISIT_SCHOOL_SOLO, {
-        name: pet.name,
+        name: getFullPetName(pet),
         activity,
       }));
       return seal.ext.newCmdExecuteResult(true);
@@ -639,12 +638,12 @@ function registerCommands(ext: seal.ExtInfo) {
     const [pet1, pet2] = pets;
     const activityTemplate = randomItem(TEXT.VISIT_SCHOOL_PAIR_ACTIVITIES);
     const activity = formatText(activityTemplate, {
-      name1: pet1.name,
-      name2: pet2.name,
+      name1: getFullPetName(pet1),
+      name2: getFullPetName(pet2),
     });
     seal.replyToSender(ctx, msg, formatText(TEXT.VISIT_SCHOOL_PAIR, {
-      name1: pet1.name,
-      name2: pet2.name,
+      name1: getFullPetName(pet1),
+      name2: getFullPetName(pet2),
       activity,
     }));
     return seal.ext.newCmdExecuteResult(true);

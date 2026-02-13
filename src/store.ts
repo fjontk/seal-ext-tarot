@@ -7,8 +7,9 @@ import { GAME, SkillKey, SpeciesConfig } from './game_config';
 // ---- 宠物数据类型 ----
 export interface Pet {
   id: string;              // UserID，作为唯一标识
-  name: string;            // 宠物名字
-  species: string;         // 物种名
+  name: string;            // 主人名（用于组成"xxx的物种"格式的宠物名）
+  species: string;         // 当前物种名（可能会变化）
+  originalSpecies: string; // 领养时的物种名（用于组成宠物名，永不改变）
   speciesConversionRate: number; // 腐唯转化率（领养时由物种决定）
 
   // 状态
@@ -133,6 +134,11 @@ export function savePet(pet: Pet): void {
   saveData(data);
 }
 
+/** 获取宠物的完整名称（格式：xxx的物种） */
+export function getFullPetName(pet: Pet): string {
+  return `${pet.name}的${pet.originalSpecies}`;
+}
+
 /** 创建新宠物 */
 export function createPet(
   userId: string,
@@ -141,8 +147,9 @@ export function createPet(
 ): Pet {
   return {
     id: userId,
-    name: `${ownerName}的${species.name}`,
+    name: ownerName,            // 存储主人名，宠物全名由 getFullPetName 生成
     species: species.name,
+    originalSpecies: species.name, // 记录领养时的物种，永不改变
     speciesConversionRate: species.conversionRate,
     hunger: GAME.INITIAL_HUNGER,
     hygiene: GAME.INITIAL_HYGIENE,
@@ -351,9 +358,9 @@ export function runSchoolPatrol(hygieneLimit: number): PatrolResult {
       pet.schoolData = undefined;
       pet.lastInteractionTime = Date.now();
       pet.pendingMessages.push(
-        `⚠️ ${pet.name}因为太脏被学校遣返回家了！清洁度：${status.hygiene}`
+        `⚠️ ${getFullPetName(pet)}因为太脏被学校遣返回家了！清洁度：${status.hygiene}`
       );
-      result.expelled.push({ name: pet.name, hygiene: status.hygiene });
+      result.expelled.push({ name: getFullPetName(pet), hygiene: status.hygiene });
     } else {
       remaining.push(petId);
     }
@@ -409,7 +416,7 @@ export function settleEvents(): EventResult[] {
     const groupNames: string[] = [];
     for (const petId of group) {
       const pet = data.pets[petId];
-      if (pet) groupNames.push(pet.name);
+      if (pet) groupNames.push(getFullPetName(pet));
     }
 
     for (const petId of group) {
@@ -452,12 +459,12 @@ export function settleEvents(): EventResult[] {
 
       // 生成通知
       const groupInfo = group.length === 1
-        ? `🎙️ ${pet.name}进行了Solo表演！`
+        ? `🎙️ ${getFullPetName(pet)}进行了Solo表演！`
         : `🎶 ${groupNames.join('、')}组成了临时团体一起表演！`;
-      const resultText = formatEventResult(pet.name, result, fansDelta);
+      const resultText = formatEventResult(getFullPetName(pet), result, fansDelta);
       pet.pendingMessages.push(`${groupInfo}\n${resultText}`);
 
-      results.push({ petId, petName: pet.name, result, fansDelta, groupMembers: groupNames });
+      results.push({ petId, petName: getFullPetName(pet), result, fansDelta, groupMembers: groupNames });
     }
   }
 
