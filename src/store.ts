@@ -484,6 +484,14 @@ function formatEventResult(name: string, result: EventResult['result'], fans: nu
 
 // ---- 内部辅助 ----
 
+/** 清除所有数据（危险操作） */
+export function clearAllData(): void {
+  _cache = defaultStorage();
+  if (_ext) {
+    _ext.storageSet(STORAGE_KEY, JSON.stringify(_cache));
+  }
+}
+
 /** 直接应用技能增长（避免循环引用 utils） */
 function applySkillGainDirect(pet: Pet, key: SkillKey, amount: number): void {
   switch (key) {

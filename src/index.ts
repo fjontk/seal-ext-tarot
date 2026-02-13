@@ -9,7 +9,7 @@ import {
   getPet, savePet, createPet,
   updatePetStatus, getSchoolStatus, settleSchool,
   onSkillGain, resetDaily, runSchoolPatrol, settleEvents,
-  getRandomSchoolPet, getRandomTwoSchoolPets,
+  getRandomSchoolPet, getRandomTwoSchoolPets, clearAllData,
 } from './store';
 import {
   formatText, randomItem, clamp, rollDice,
@@ -650,6 +650,62 @@ function registerCommands(ext: seal.ExtInfo) {
     return seal.ext.newCmdExecuteResult(true);
   };
   ext.cmdMap['查看学校'] = cmdVisitSchool;
+
+  // ---- 14. 清除数据（管理员） ----
+  // 用于存储确认状态（userId -> 确认时间戳）
+  const clearConfirmMap: { [userId: string]: number } = {};
+
+  const cmdClearData = seal.ext.newCmdItemInfo();
+  cmdClearData.name = '清除数据';
+  cmdClearData.help = '（管理员）【慎按】清除本地所有宠物数据';
+  cmdClearData.solve = (ctx, msg, _cmdArgs) => {
+    // 权限检查：管理员 50+
+    if (ctx.privilegeLevel < 50) {
+      seal.replyToSender(ctx, msg, TEXT.ADMIN_ONLY);
+      return seal.ext.newCmdExecuteResult(true);
+    }
+
+    // 记录确认请求时间
+    clearConfirmMap[ctx.player.userId] = Date.now();
+
+    seal.replyToSender(ctx, msg, TEXT.CLEAR_DATA_CONFIRM);
+    return seal.ext.newCmdExecuteResult(true);
+  };
+  ext.cmdMap['清除数据'] = cmdClearData;
+
+  // ---- 15. 确认清除数据（管理员） ----
+  const cmdConfirmClearData = seal.ext.newCmdItemInfo();
+  cmdConfirmClearData.name = '确认清除数据';
+  cmdConfirmClearData.help = '（管理员）确认清除本地所有宠物数据';
+  cmdConfirmClearData.solve = (ctx, msg, _cmdArgs) => {
+    // 权限检查：管理员 50+
+    if (ctx.privilegeLevel < 50) {
+      seal.replyToSender(ctx, msg, TEXT.ADMIN_ONLY);
+      return seal.ext.newCmdExecuteResult(true);
+    }
+
+    const confirmTime = clearConfirmMap[ctx.player.userId];
+    if (!confirmTime) {
+      seal.replyToSender(ctx, msg, TEXT.CLEAR_DATA_NO_CONFIRM);
+      return seal.ext.newCmdExecuteResult(true);
+    }
+
+    // 检查是否在30秒内
+    const elapsed = Date.now() - confirmTime;
+    if (elapsed > 30 * 1000) {
+      delete clearConfirmMap[ctx.player.userId];
+      seal.replyToSender(ctx, msg, TEXT.CLEAR_DATA_TIMEOUT);
+      return seal.ext.newCmdExecuteResult(true);
+    }
+
+    // 执行清除
+    clearAllData();
+    delete clearConfirmMap[ctx.player.userId];
+
+    seal.replyToSender(ctx, msg, TEXT.CLEAR_DATA_SUCCESS);
+    return seal.ext.newCmdExecuteResult(true);
+  };
+  ext.cmdMap['确认清除数据'] = cmdConfirmClearData;
 }
 
 // ============================================================
