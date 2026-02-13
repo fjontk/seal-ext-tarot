@@ -10,7 +10,7 @@ export interface Pet {
   name: string;            // 主人名（用于组成"xxx的物种"格式的宠物名）
   species: string;         // 当前物种名（可能会变化）
   originalSpecies: string; // 领养时的物种名（用于组成宠物名，永不改变）
-  speciesConversionRate: number; // 腐唯转化率（领养时由物种决定）
+  speciesConversionRate: number; // 歪屁股cp粉转化率（领养时由物种决定）
 
   // 状态
   hunger: number;          // 饱食度 (0-100)

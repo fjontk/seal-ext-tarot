@@ -52,7 +52,7 @@ interface Pet {
   fans: {
     cpFans: number; // CP粉
     soloFans: number; // 唯粉
-    toxicFans: number; // 腐唯 (由CP粉和唯粉转化)
+    toxicFans: number; // 歪屁股cp粉 (由CP粉和唯粉转化)
     extraFans: number; // 额外粉丝数 (Event奖励/惩罚，初始0)
   };
 
@@ -135,9 +135,9 @@ interface Pet {
 *   **基础转换**:
     *   `CP粉` = `卖腐技能` * (系数A + 随机浮动)
     *   `唯粉` = `媚粉技能` * (系数B) + (`vocal`+`dance`+`rap`)/3 * (系数C)
-*   **腐唯转化 (Toxic Fan Conversion)**:
+*   **歪屁股cp粉转化 (Toxic Fan Conversion)**:
     *   当 `卖腐` 和 `媚粉` 等级都较高时，冲突概率增加。
-    *   `腐唯` = (`CP粉` + `唯粉`) * (转化率 based on `abs(卖腐 - 媚粉)`)
+    *   `歪屁股cp粉` = (`CP粉` + `唯粉`) * (转化率 based on `abs(卖腐 - 媚粉)`)
     *   *注*: 具体的“宠物品种转换率”将在领养时写入宠物数据。
 *   **额外粉丝 (Event Bonus)**:
     *   初始为 0。
@@ -155,7 +155,7 @@ interface Pet {
 | 技能 | 对应行动 | 效果描述 | 游戏内收益 |
 | :--- | :--- | :--- | :--- |
 | **烹饪** (Cooking) | **美食直播/做饭** | 宠物自己做饭吃，或者直播做饭。 | **回复饱食度** (无需消耗食物道具)，**减少少量压力**，+ 少量粉丝。 |
-| **文化** (Culture) | **写小作文/公关** | 宠物发布高情商小作文，引导粉丝舆论。 | **净化粉丝结构**：将 `toxicFans` (腐唯) 转化为 `soloFans` 或 `cpFans`。 |
+| **文化** (Culture) | **写小作文/公关** | 宠物发布高情商小作文，引导粉丝舆论。 | **净化粉丝结构**：将 `toxicFans` (歪屁股cp粉) 转化为 `soloFans` 或 `cpFans`。 |
 | **绘画** (Painting) | **产出饭绘** | 宠物绘制同人图/周边图。 | **大幅减少压力**，增加 CP粉。 |
 | **外语** (Language) | **海外营业** | 宠物在海外社交媒体营业。 | **Event 加成**：获得 `InternationalBuff`，下一次参加 Event 的**基础成功率提升**。 |
 

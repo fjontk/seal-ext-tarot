@@ -7,7 +7,7 @@
 export interface SpeciesConfig {
   /** 物种名称 */
   name: string;
-  /** 腐唯转化率基础值 (0~1) */
+  /** 歪屁股cp粉转化率基础值 (0~1) */
   conversionRate: number;
 }
 
@@ -106,7 +106,7 @@ export const GAME = {
   COOKING_STRESS_RELIEF: 10,
   COOKING_FAN_GAIN: 5,
   PAINTING_STRESS_RELIEF: 35,
-  /** 文化消解腐唯数量 */
+  /** 文化消解歪屁股cp粉数量 */
   CULTURE_TOXIC_CONVERT: 10,
   /** 外语带来的Event成功率加成 (0.15 = 15%) */
   LANGUAGE_EVENT_BUFF: 0.15,

@@ -154,16 +154,15 @@ function registerCommands(ext: seal.ExtInfo) {
       const partner = getRandomSchoolPet(pet.id);
       let activityText: string;
       
-      if (partner && Math.random() > 0.4) {
-        // 60%概率双人互动
+      if (partner && Math.random() > 0.1) {
+        // 90%概率双人互动
         const pairActivity = randomItem(TEXT.SCHOOL_ACTIVITIES_PAIR);
         // 从宠物名字中提取主人名（直接使用 partner.name 即为主人名）
-        const partnerSpecies = partner.originalSpecies;
         
         activityText = formatText(TEXT.VIEW_AT_SCHOOL_ACTIVITY_PAIR, {
           petName: getFullPetName(pet),
           activity: formatText(pairActivity, {
-            partnerName: partnerSpecies,
+            partnerName: getFullPetName(partner),
           }),
         });
       } else {

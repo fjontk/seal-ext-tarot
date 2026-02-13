@@ -37,7 +37,7 @@ export const TEXT = {
   VIEW_AT_HOME_FANS:
     '═══ 粉丝 ═══\n' +
     'CP粉：{cpFans}  唯粉：{soloFans}\n' +
-    '腐唯：{toxicFans}\n' +
+    '歪屁股cp粉：{toxicFans}\n' +
     '活动加成粉丝：{extraFans}\n' +
     '总粉丝数：{totalFans}',
 
@@ -65,16 +65,16 @@ export const TEXT = {
   ],
   // ======== 学校随机行为描述（双人互动） ========
   SCHOOL_ACTIVITIES_PAIR: [
-    '正在和{partnerOwner}的{partnerName}一起玩耍',
-    '正在和{partnerOwner}的{partnerName}偷吃零食',
-    '正在和{partnerOwner}的{partnerName}排练舞蹈',
-    '正在围观{partnerOwner}的{partnerName}打架',
-    '正在和{partnerOwner}的{partnerName}比赛吃饭速度',
-    '正在给{partnerOwner}的{partnerName}梳毛',
-    '正在和{partnerOwner}的{partnerName}互相挠痒痒',
-    '正在和{partnerOwner}的{partnerName}分享小秘密',
-    '正在和{partnerOwner}的{partnerName}一起睡午觉',
-    '正在教{partnerOwner}的{partnerName}跳舞',
+    '正在和{partnerName}一起玩耍',
+    '正在和{partnerName}偷吃零食',
+    '正在和{partnerName}排练舞蹈',
+    '正在围观{partnerName}打架',
+    '正在和{partnerName}比赛吃饭速度',
+    '正在给{partnerName}梳毛',
+    '正在和{partnerName}互相挠痒痒',
+    '正在和{partnerName}分享小秘密',
+    '正在和{partnerName}一起睡午觉',
+    '正在教{partnerName}跳舞',
   ],
 
   // ======== 查看学校 ========
@@ -184,7 +184,7 @@ export const TEXT = {
     '体力 -{cost}（剩余：{stamina}）',
   TALENT_CULTURE_SUCCESS:
     '{name}写了一篇高情商小作文！📝\n' +
-    '成功引导了{converted}位腐唯回归正途\n' +
+    '成功引导了{converted}位歪屁股cp粉回归正途\n' +
     '体力 -{cost}（剩余：{stamina}）',
   TALENT_PAINTING_SUCCESS:
     '{name}画了一幅超棒的饭绘！🎨\n' +
