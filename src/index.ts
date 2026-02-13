@@ -9,7 +9,7 @@ import {
   getPet, savePet, createPet,
   updatePetStatus, getSchoolStatus, settleSchool,
   onSkillGain, resetDaily, runSchoolPatrol, settleEvents,
-  getRandomSchoolPet,
+  getRandomSchoolPet, getRandomTwoSchoolPets,
 } from './store';
 import {
   formatText, randomItem, clamp, rollDice,
@@ -606,6 +606,50 @@ function registerCommands(ext: seal.ExtInfo) {
     return seal.ext.newCmdExecuteResult(true);
   };
   ext.cmdMap['宠物手册'] = cmdHelp;
+
+  // ---- 13. 查看学校（群聊限定） ----
+  const cmdVisitSchool = seal.ext.newCmdItemInfo();
+  cmdVisitSchool.name = '查看学校';
+  cmdVisitSchool.help = '偷偷看看学校里宠物们在干什么（群聊限定）';
+  cmdVisitSchool.solve = (ctx, msg, _cmdArgs) => {
+    if (ctx.isPrivate) {
+      seal.replyToSender(ctx, msg, TEXT.GROUP_ONLY);
+      return seal.ext.newCmdExecuteResult(true);
+    }
+
+    const { pets, count } = getRandomTwoSchoolPets();
+
+    if (count === 0) {
+      seal.replyToSender(ctx, msg, TEXT.VISIT_SCHOOL_EMPTY);
+      return seal.ext.newCmdExecuteResult(true);
+    }
+
+    if (count === 1 || pets.length === 1) {
+      // 只有一只宠物，独自玩耍
+      const pet = pets[0];
+      const activity = randomItem(TEXT.VISIT_SCHOOL_SOLO_ACTIVITIES);
+      seal.replyToSender(ctx, msg, formatText(TEXT.VISIT_SCHOOL_SOLO, {
+        name: pet.name,
+        activity,
+      }));
+      return seal.ext.newCmdExecuteResult(true);
+    }
+
+    // 两只宠物互动
+    const [pet1, pet2] = pets;
+    const activityTemplate = randomItem(TEXT.VISIT_SCHOOL_PAIR_ACTIVITIES);
+    const activity = formatText(activityTemplate, {
+      name1: pet1.name,
+      name2: pet2.name,
+    });
+    seal.replyToSender(ctx, msg, formatText(TEXT.VISIT_SCHOOL_PAIR, {
+      name1: pet1.name,
+      name2: pet2.name,
+      activity,
+    }));
+    return seal.ext.newCmdExecuteResult(true);
+  };
+  ext.cmdMap['查看学校'] = cmdVisitSchool;
 }
 
 // ============================================================

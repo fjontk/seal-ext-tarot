@@ -77,6 +77,38 @@ export const TEXT = {
     '正在教{partnerOwner}的{partnerName}跳舞',
   ],
 
+  // ======== 查看学校 ========
+  VISIT_SCHOOL_EMPTY:
+    '🏫 学校里空荡荡的，一只宠物都没有~',
+  VISIT_SCHOOL_SOLO:
+    '🏫 你偷偷溜进学校瞅了一眼……\n👀 只看到{name}一只宠物。\n💬 {activity}',
+  VISIT_SCHOOL_SOLO_ACTIVITIES: [
+    '它正在独自玩毛线球',
+    '它正趴在窗边晒太阳',
+    '它正在对着镜子练表情',
+    '它正在角落里画圈圈',
+    '它正在自言自语背台词',
+    '它正无聊地数教室里的瓷砖',
+    '它正躺在地上望天花板发呆',
+    '它正在独自跳舞，还时不时偷看门口',
+  ],
+  VISIT_SCHOOL_PAIR:
+    '🏫 你偷偷溜进学校瞅了一眼……\n👀 看到了{name1}和{name2}！\n💬 {activity}',
+  VISIT_SCHOOL_PAIR_ACTIVITIES: [
+    '{name1}正在追着{name2}满教室跑',
+    '{name1}和{name2}正在互相梳毛，好甜',
+    '{name1}正在教{name2}跳舞，但{name2}一直踩错脚',
+    '{name1}偷吃了{name2}的零食，两只正在吵架',
+    '{name1}和{name2}正肩并肩睡午觉',
+    '{name1}正在给{name2}讲笑话，{name2}笑得打滚',
+    '{name1}和{name2}正在练习对口相声',
+    '{name1}正在帮{name2}补课，但{name2}一直走神',
+    '{name1}和{name2}正在偷偷比谁的主人更好',
+    '{name1}和{name2}正在合作堆零食小山',
+  ],
+  GROUP_ONLY:
+    '这个指令只能在群聊中使用哦！',
+
   // ======== 喂食 ========
   FEED_SUCCESS:
     '你给{name}喂了食物！\n' +
@@ -249,6 +281,9 @@ export const TEXT = {
     '.送去上学 <课程名> - 送宠物去学校\n' +
     '.接宠物 - 接宠物回家\n' +
     '课程列表：卖腐/vocal/dance/rap/媚粉/烹饪/文化/绘画/外语\n' +
+    '\n' +
+    '【群聊指令】(仅限群聊)\n' +
+    '.查看学校 - 偷偷看看学校里宠物们在干什么\n' +
     '\n' +
     '【活动指令】(仅限私聊)\n' +
     '.报名活动 - 报名参加每日Event\n' +

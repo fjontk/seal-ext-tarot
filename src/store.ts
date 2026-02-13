@@ -275,6 +275,28 @@ export function getRandomSchoolPet(excludeId: string): Pet | null {
   return data.pets[randomId] || null;
 }
 
+/** 获取随机两个在校宠物（用于查看学校指令） */
+export function getRandomTwoSchoolPets(): { pets: Pet[]; count: number } {
+  const data = loadData();
+  const ids = data.schoolRegistry;
+  const count = ids.length;
+  
+  if (count === 0) return { pets: [], count: 0 };
+  if (count === 1) {
+    const pet = data.pets[ids[0]];
+    return pet ? { pets: [pet], count: 1 } : { pets: [], count: 0 };
+  }
+  
+  // 随机选两个不同的宠物
+  const shuffled = [...ids].sort(() => Math.random() - 0.5);
+  const selected: Pet[] = [];
+  for (let i = 0; i < Math.min(2, shuffled.length); i++) {
+    const pet = data.pets[shuffled[i]];
+    if (pet) selected.push(pet);
+  }
+  return { pets: selected, count };
+}
+
 // ---- 每日重置 ----
 
 /** 重置所有宠物的每日标记 */
