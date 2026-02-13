@@ -490,72 +490,7 @@ function registerCommands(ext: seal.ExtInfo) {
   };
   ext.cmdMap['才艺'] = cmdTalent;
 
-  // ---- 10. 赠送礼物 ----
-  const cmdGift = seal.ext.newCmdItemInfo();
-  cmdGift.name = '赠送礼物';
-  cmdGift.help = '给别人的宠物送礼物。格式：.赠送礼物 <@某人或QQ号> <礼物描述>';
-  cmdGift.solve = (ctx, msg, cmdArgs) => {
-    const pet = requirePet(ctx, msg);
-    if (!pet) return seal.ext.newCmdExecuteResult(true);
-
-    if (pet.dailyFlags.giftSent) {
-      seal.replyToSender(ctx, msg, TEXT.GIFT_ALREADY_SENT);
-      return seal.ext.newCmdExecuteResult(true);
-    }
-
-    // 尝试获取目标：优先通过 @ 获取
-    let targetId = '';
-    let targetName = '';
-
-    if (cmdArgs.at && cmdArgs.at.length > 0) {
-      targetId = cmdArgs.at[0].userId;
-      // 尝试通过代骰上下文获取名称
-      try {
-        const targetCtx = seal.getCtxProxyFirst(ctx, cmdArgs);
-        targetName = targetCtx.player.name;
-      } catch (_e) {
-        targetName = targetId;
-      }
-    } else {
-      targetId = cmdArgs.getArgN(1);
-      targetName = targetId;
-    }
-
-    if (!targetId) {
-      seal.replyToSender(ctx, msg, '请指定赠送对象！格式：.赠送礼物 <@某人> <礼物描述>');
-      return seal.ext.newCmdExecuteResult(true);
-    }
-
-    if (targetId === ctx.player.userId) {
-      seal.replyToSender(ctx, msg, TEXT.GIFT_SELF);
-      return seal.ext.newCmdExecuteResult(true);
-    }
-
-    const targetPet = getPet(targetId);
-    if (!targetPet) {
-      seal.replyToSender(ctx, msg, TEXT.GIFT_TARGET_NO_PET);
-      return seal.ext.newCmdExecuteResult(true);
-    }
-
-    const giftDesc = cmdArgs.getRestArgsFrom(2) || '一份神秘礼物';
-
-    pet.dailyFlags.giftSent = true;
-    savePet(pet);
-
-    // 给目标宠物添加待推送消息
-    targetPet.pendingMessages.push(
-      `🎁 ${ctx.player.name}给你的${getFullPetName(targetPet)}送了礼物：${giftDesc}`
-    );
-    savePet(targetPet);
-
-    seal.replyToSender(ctx, msg, formatText(TEXT.GIFT_SUCCESS, {
-      targetName, giftDesc,
-    }));
-    return seal.ext.newCmdExecuteResult(true);
-  };
-  ext.cmdMap['赠送礼物'] = cmdGift;
-
-  // ---- 11. 学校巡逻（管理员） ----
+  // ---- 10. 学校巡逻（管理员） ----
   const cmdPatrol = seal.ext.newCmdItemInfo();
   cmdPatrol.name = '学校巡逻';
   cmdPatrol.help = '（管理员）立即执行一次学校卫生检查';

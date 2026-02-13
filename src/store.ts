@@ -52,7 +52,6 @@ export interface Pet {
 
   // 每日标记
   dailyFlags: {
-    giftSent: boolean;
     eventJoined: boolean;
     stamina: number;
     nextEventBuff: number; // 外语海外营业带来的下次Event加成
@@ -164,7 +163,6 @@ export function createPet(
     },
     fans: { cpFans: 0, soloFans: 0, toxicFans: 0, extraFans: 0 },
     dailyFlags: {
-      giftSent: false,
       eventJoined: false,
       stamina: GAME.MAX_STAMINA,
       nextEventBuff: 0,
@@ -311,7 +309,6 @@ export function resetDaily(): void {
   const data = loadData();
   for (const userId of Object.keys(data.pets)) {
     data.pets[userId].dailyFlags = {
-      giftSent: false,
       eventJoined: false,
       stamina: GAME.MAX_STAMINA,
       nextEventBuff: 0,

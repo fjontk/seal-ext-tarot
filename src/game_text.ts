@@ -201,19 +201,6 @@ export const TEXT = {
   TALENT_INVALID_TYPE:
     '没有这种才艺类型！\n可选类型：烹饪、文化、绘画、外语',
 
-  // ======== 送礼 ========
-  GIFT_SUCCESS:
-    '你给{targetName}的宠物送了一份礼物：{giftDesc}\n' +
-    '{targetName}的宠物收到了来自你的心意！💝',
-  GIFT_ALREADY_SENT:
-    '你今天已经送过礼物了，明天再来吧~',
-  GIFT_TARGET_NO_PET:
-    '对方还没有宠物哦~',
-  GIFT_SELF:
-    '不能给自己的宠物送礼物啦！',
-  GIFT_NO_PET:
-    '你自己还没有宠物，先 .领养宠物 再来送礼吧~',
-
   // ======== 改名 ========
   RENAME_SUCCESS:
     '宠物改名成功！✏️\n{oldName} → {newName}',
@@ -305,9 +292,6 @@ export const TEXT = {
     '.报名活动 - 报名参加每日Event\n' +
     '.才艺 <类型> - 使用生活技能\n' +
     '  类型：烹饪 / 文化 / 绘画 / 外语\n' +
-    '\n' +
-    '【社交指令】\n' +
-    '.赠送礼物 <@某人> <礼物描述> - 给别人的宠物送礼\n' +
     '\n' +
     '【管理指令】\n' +
     '.学校巡逻 - (管理员) 检查学校卫生\n' +
