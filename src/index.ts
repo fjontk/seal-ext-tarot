@@ -158,14 +158,11 @@ function registerCommands(ext: seal.ExtInfo) {
         // 60%概率双人互动
         const pairActivity = randomItem(TEXT.SCHOOL_ACTIVITIES_PAIR);
         // 从宠物名字中提取主人名（直接使用 partner.name 即为主人名）
-        const partnerOwner = partner.name;
         const partnerSpecies = partner.originalSpecies;
         
         activityText = formatText(TEXT.VIEW_AT_SCHOOL_ACTIVITY_PAIR, {
-          ownerName: ctx.player.name,
           petName: getFullPetName(pet),
           activity: formatText(pairActivity, {
-            partnerOwner,
             partnerName: partnerSpecies,
           }),
         });

@@ -46,7 +46,7 @@ export const TEXT = {
   VIEW_AT_SCHOOL_ACTIVITY_SOLO:
     '💬 {activity}',
   VIEW_AT_SCHOOL_ACTIVITY_PAIR:
-    '💬 {ownerName}的{petName}{activity}',
+    '💬 {petName}{activity}',
   VIEW_AT_SCHOOL_STATUS:
     '当前饱食度：{hunger}/100\n' +
     '当前清洁度：{hygiene}/100\n' +
