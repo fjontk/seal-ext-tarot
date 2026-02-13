@@ -8,7 +8,8 @@ import {
   initStore, loadData, saveData,
   getPet, savePet, createPet, getFullPetName,
   updatePetStatus, getSchoolStatus, settleSchool,
-  onSkillGain, resetDaily, runSchoolPatrol, settleEvents,
+  onSkillGain, resetDaily, runSchoolPatrol,
+  createGroupEvent, joinGroupEvent, settleGroupEvent, getGroupEvents,
   getRandomSchoolPet, getRandomTwoSchoolPets, clearAllData,
 } from './store';
 import {
@@ -48,8 +49,7 @@ function main() {
 // 插件配置注册
 // ============================================================
 function registerConfigs(ext: seal.ExtInfo) {
-  seal.ext.registerStringConfig(ext, 'EventTime', '21:00', '每日Event结算时间（HH:MM）');
-  seal.ext.registerStringConfig(ext, 'SchoolCheckTime', '17:00', '每日学校巡检时间（HH:MM）');
+
   seal.ext.registerIntConfig(ext, 'HygieneLimit', 0, '学校强制劝退的清洁度阈值');
 }
 
@@ -371,38 +371,143 @@ function registerCommands(ext: seal.ExtInfo) {
   };
   ext.cmdMap['接宠物'] = cmdPickup;
 
-  // ---- 8. 报名活动 ----
+  // ---- 8. 创建活动（群聊） ----
+  const cmdEventCreate = seal.ext.newCmdItemInfo();
+  cmdEventCreate.name = '创建活动';
+  cmdEventCreate.help = '在当前群创建一个活动（群聊）。格式：.创建活动 <活动名>';
+  cmdEventCreate.solve = (ctx, msg, cmdArgs) => {
+    if (ctx.isPrivate) {
+      seal.replyToSender(ctx, msg, TEXT.GROUP_ONLY);
+      return seal.ext.newCmdExecuteResult(true);
+    }
+    const eventName = cmdArgs.getArgN(1).trim();
+    if (!eventName) {
+      seal.replyToSender(ctx, msg, TEXT.EVENT_CREATE_EMPTY_NAME);
+      return seal.ext.newCmdExecuteResult(true);
+    }
+    const groupId = ctx.group.groupId;
+    const result = createGroupEvent(groupId, eventName, ctx.player.userId, ctx.player.name);
+    if (!result) {
+      seal.replyToSender(ctx, msg, formatText(TEXT.EVENT_CREATE_ALREADY_EXISTS, { eventName }));
+    } else {
+      seal.replyToSender(ctx, msg, formatText(TEXT.EVENT_CREATE_SUCCESS, { eventName }));
+    }
+    return seal.ext.newCmdExecuteResult(true);
+  };
+  ext.cmdMap['创建活动'] = cmdEventCreate;
+
+  // ---- 8.1 报名活动（群聊） ----
   const cmdEventJoin = seal.ext.newCmdItemInfo();
   cmdEventJoin.name = '报名活动';
-  cmdEventJoin.help = '报名参加今晚的Event活动（私聊）';
-  cmdEventJoin.solve = (ctx, msg, _cmdArgs) => {
-    if (!requirePrivate(ctx, msg)) return seal.ext.newCmdExecuteResult(true);
+  cmdEventJoin.help = '送宠物参加群活动（群聊）。格式：.报名活动 <活动名>';
+  cmdEventJoin.solve = (ctx, msg, cmdArgs) => {
+    if (ctx.isPrivate) {
+      seal.replyToSender(ctx, msg, TEXT.GROUP_ONLY);
+      return seal.ext.newCmdExecuteResult(true);
+    }
+    const eventName = cmdArgs.getArgN(1).trim();
+    if (!eventName) {
+      seal.replyToSender(ctx, msg, TEXT.EVENT_JOIN_EMPTY_NAME);
+      return seal.ext.newCmdExecuteResult(true);
+    }
     const pet = requirePet(ctx, msg);
     if (!pet) return seal.ext.newCmdExecuteResult(true);
 
-    if (pet.location === 'school') {
-      seal.replyToSender(ctx, msg, formatText(TEXT.EVENT_NOT_HOME, { name: getFullPetName(pet) }));
-      return seal.ext.newCmdExecuteResult(true);
+    const groupId = ctx.group.groupId;
+    const status = joinGroupEvent(groupId, eventName, ctx.player.userId);
+    switch (status) {
+      case 'ok':
+        seal.replyToSender(ctx, msg, formatText(TEXT.EVENT_JOIN_SUCCESS, { name: getFullPetName(pet), eventName }));
+        break;
+      case 'not_found':
+        seal.replyToSender(ctx, msg, formatText(TEXT.EVENT_NOT_FOUND, { eventName }));
+        break;
+      case 'already_joined':
+        seal.replyToSender(ctx, msg, formatText(TEXT.EVENT_ALREADY_JOINED, { name: getFullPetName(pet), eventName }));
+        break;
+      case 'not_home':
+        seal.replyToSender(ctx, msg, formatText(TEXT.EVENT_NOT_HOME, { name: getFullPetName(pet) }));
+        break;
+      case 'no_pet':
+        seal.replyToSender(ctx, msg, TEXT.NO_PET);
+        break;
     }
-
-    if (pet.dailyFlags.eventJoined) {
-      seal.replyToSender(ctx, msg, formatText(TEXT.EVENT_ALREADY_JOINED, { name: getFullPetName(pet) }));
-      return seal.ext.newCmdExecuteResult(true);
-    }
-
-    pet.dailyFlags.eventJoined = true;
-
-    const data = loadData();
-    if (!data.eventRegistry.includes(pet.id)) {
-      data.eventRegistry.push(pet.id);
-    }
-    data.pets[pet.id] = pet;
-    saveData(data);
-
-    seal.replyToSender(ctx, msg, formatText(TEXT.EVENT_JOIN_SUCCESS, { name: getFullPetName(pet) }));
     return seal.ext.newCmdExecuteResult(true);
   };
   ext.cmdMap['报名活动'] = cmdEventJoin;
+
+  // ---- 8.2 活动结算（群聊，仅创建者） ----
+  const cmdEventSettle = seal.ext.newCmdItemInfo();
+  cmdEventSettle.name = '活动结算';
+  cmdEventSettle.help = '结算群活动（群聊，仅创建者）。格式：.活动结算 <活动名>';
+  cmdEventSettle.solve = (ctx, msg, cmdArgs) => {
+    if (ctx.isPrivate) {
+      seal.replyToSender(ctx, msg, TEXT.GROUP_ONLY);
+      return seal.ext.newCmdExecuteResult(true);
+    }
+    const eventName = cmdArgs.getArgN(1).trim();
+    if (!eventName) {
+      seal.replyToSender(ctx, msg, TEXT.EVENT_SETTLE_EMPTY_NAME);
+      return seal.ext.newCmdExecuteResult(true);
+    }
+    const groupId = ctx.group.groupId;
+    const events = getGroupEvents(groupId);
+    const event = events[eventName];
+    if (!event) {
+      seal.replyToSender(ctx, msg, formatText(TEXT.EVENT_NOT_FOUND, { eventName }));
+      return seal.ext.newCmdExecuteResult(true);
+    }
+    if (event.creatorId !== ctx.player.userId) {
+      seal.replyToSender(ctx, msg, formatText(TEXT.EVENT_SETTLE_NOT_CREATOR, { eventName, creatorName: event.creatorName }));
+      return seal.ext.newCmdExecuteResult(true);
+    }
+    if (event.participants.length === 0) {
+      seal.replyToSender(ctx, msg, formatText(TEXT.EVENT_SETTLE_EMPTY, { eventName }));
+      return seal.ext.newCmdExecuteResult(true);
+    }
+
+    const settlement = settleGroupEvent(groupId, eventName);
+    if (!settlement) {
+      seal.replyToSender(ctx, msg, formatText(TEXT.EVENT_NOT_FOUND, { eventName }));
+      return seal.ext.newCmdExecuteResult(true);
+    }
+
+    const verdict = settlement.success ? TEXT.EVENT_SETTLE_VERDICT_SUCCESS : TEXT.EVENT_SETTLE_VERDICT_FAIL;
+    seal.replyToSender(ctx, msg, formatText(TEXT.EVENT_SETTLE_SUCCESS, {
+      eventName: settlement.eventName,
+      count: settlement.participantCount,
+      totalFans: settlement.totalFans,
+      perCapita: settlement.perCapitaFans,
+      verdict,
+    }));
+    return seal.ext.newCmdExecuteResult(true);
+  };
+  ext.cmdMap['活动结算'] = cmdEventSettle;
+
+  // ---- 8.3 查看活动（群聊） ----
+  const cmdEventView = seal.ext.newCmdItemInfo();
+  cmdEventView.name = '查看活动';
+  cmdEventView.help = '查看当前群进行中的活动（群聊）';
+  cmdEventView.solve = (ctx, msg, _cmdArgs) => {
+    if (ctx.isPrivate) {
+      seal.replyToSender(ctx, msg, TEXT.GROUP_ONLY);
+      return seal.ext.newCmdExecuteResult(true);
+    }
+    const groupId = ctx.group.groupId;
+    const events = getGroupEvents(groupId);
+    const names = Object.keys(events);
+    if (names.length === 0) {
+      seal.replyToSender(ctx, msg, TEXT.EVENT_LIST_EMPTY);
+      return seal.ext.newCmdExecuteResult(true);
+    }
+    const lines = names.map((name, i) => {
+      const ev = events[name];
+      return `${i + 1}. 「${name}」 - 创建者：${ev.creatorName}，已报名：${ev.participants.length}只`;
+    });
+    seal.replyToSender(ctx, msg, TEXT.EVENT_LIST_HEADER + '\n' + lines.join('\n'));
+    return seal.ext.newCmdExecuteResult(true);
+  };
+  ext.cmdMap['查看活动'] = cmdEventView;
 
   // ---- 9. 才艺 ----
   const cmdTalent = seal.ext.newCmdItemInfo();
@@ -642,24 +747,16 @@ function registerCommands(ext: seal.ExtInfo) {
 // 定时任务注册
 // ============================================================
 function registerTasks(ext: seal.ExtInfo) {
-  const eventTime = seal.ext.getStringConfig(ext, 'EventTime') || '21:00';
-  const schoolCheckTime = seal.ext.getStringConfig(ext, 'SchoolCheckTime') || '17:00';
-
   // 每日 00:00 重置
-  seal.ext.registerTask(ext, 'daily', '0:00', () => {
+  seal.ext.registerTask(ext, 'daily', '0:00', (taskCtx) => {
     resetDaily();
-  }, 'petDailyReset', '宠物系统每日重置');
+  });
 
   // 学校巡检
-  seal.ext.registerTask(ext, 'daily', schoolCheckTime, () => {
+  seal.ext.registerTask(ext, 'daily', '17:00', (taskCtx) => {
     const hygieneLimit = seal.ext.getIntConfig(ext, 'HygieneLimit');
     runSchoolPatrol(hygieneLimit);
-  }, 'petSchoolCheck', '宠物学校卫生巡检');
-
-  // Event 结算
-  seal.ext.registerTask(ext, 'daily', eventTime, () => {
-    settleEvents();
-  }, 'petEventSettle', '宠物Event活动结算');
+  }, 'petSchoolCheck', '每日学校卫生巡检时间');
 }
 
 // ============================================================

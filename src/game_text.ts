@@ -151,29 +151,46 @@ export const TEXT = {
   PICKUP_NOT_AT_SCHOOL:
     '{name}不在学校哦，没法接~',
 
-  // ======== 报名活动 ========
+  // ======== 群活动 ========
+  EVENT_CREATE_SUCCESS:
+    '🎉 活动「{eventName}」创建成功！\n' +
+    '同群的小伙伴可以使用 .报名活动 {eventName} 送宠物参加~\n' +
+    '活动创建者可以使用 .活动结算 {eventName} 结算活动',
+  EVENT_CREATE_ALREADY_EXISTS:
+    '活动「{eventName}」已经存在了哦！',
+  EVENT_CREATE_EMPTY_NAME:
+    '请输入活动名称！格式：.创建活动 <活动名>',
   EVENT_JOIN_SUCCESS:
-    '{name}已报名参加今晚的活动！🎤\n请期待表演结果~',
+    '{name}已报名参加活动「{eventName}」！🎤',
   EVENT_ALREADY_JOINED:
-    '{name}今天已经报名了哦！',
+    '{name}已经报名了活动「{eventName}」哦！',
   EVENT_NOT_HOME:
     '{name}还在学校呢，先接回来再报名吧~',
-
-  // ======== Event 结果 ========
-  EVENT_RESULT_GREAT_SUCCESS:
-    '🌟【大成功】🌟\n{name}的表演惊艳全场！粉丝们疯狂打call！\n额外粉丝 +{fans}',
-  EVENT_RESULT_SUCCESS:
-    '✨【成功】✨\n{name}的表演很棒！获得了观众的认可！\n额外粉丝 +{fans}',
-  EVENT_RESULT_NORMAL:
-    '📝【平平无奇】\n{name}的表演中规中矩，没有太大波澜。\n额外粉丝 +{fans}',
-  EVENT_RESULT_FAIL:
-    '💧【失败】\n{name}在表演中出了点小差错…\n额外粉丝 {fans}',
-  EVENT_RESULT_GREAT_FAIL:
-    '💥【大失败】\n{name}在舞台上摔了个大跟头！社死现场！\n额外粉丝 {fans}',
-  EVENT_SOLO:
-    '🎙️ {name}进行了Solo表演！',
-  EVENT_GROUP:
-    '🎶 {names}组成了临时团体一起表演！',
+  EVENT_NOT_FOUND:
+    '活动「{eventName}」不存在哦~\n使用 .查看活动 查看当前群的活动列表',
+  EVENT_JOIN_EMPTY_NAME:
+    '请输入活动名称！格式：.报名活动 <活动名>',
+  EVENT_SETTLE_SUCCESS:
+    '🎊 活动「{eventName}」结算完毕！\n' +
+    '参与宠物：{count}只\n' +
+    '总招揽粉丝：{totalFans}\n' +
+    '人均粉丝：{perCapita}\n' +
+    '{verdict}\n' +
+    '（个人详细结果请用 .查看宠物 查看）',
+  EVENT_SETTLE_VERDICT_SUCCESS:
+    '✨ 活动大获成功！',
+  EVENT_SETTLE_VERDICT_FAIL:
+    '💧 活动不太理想…',
+  EVENT_SETTLE_NOT_CREATOR:
+    '只有活动「{eventName}」的创建者 {creatorName} 才能结算哦！',
+  EVENT_SETTLE_EMPTY:
+    '活动「{eventName}」还没有宠物报名，无法结算~',
+  EVENT_SETTLE_EMPTY_NAME:
+    '请输入活动名称！格式：.活动结算 <活动名>',
+  EVENT_LIST_EMPTY:
+    '📋 当前群还没有进行中的活动~\n使用 .创建活动 <活动名> 创建一个吧！',
+  EVENT_LIST_HEADER:
+    '📋 当前群进行中的活动：',
 
   // ======== 才艺 ========
   TALENT_COOKING_SUCCESS:
@@ -257,7 +274,7 @@ export const TEXT = {
     '此操作将删除本地所有宠物数据，包括：\n' +
     '· 所有用户的宠物\n' +
     '· 学校注册表\n' +
-    '· 活动报名数据\n' +
+    '· 所有群活动数据\n' +
     '此操作不可撤销！\n\n' +
     '如确认删除，请在30秒内发送：.确认清除数据',
   CLEAR_DATA_SUCCESS:
@@ -287,9 +304,12 @@ export const TEXT = {
     '\n' +
     '【群聊指令】(仅限群聊)\n' +
     '.查看学校 - 偷偷看看学校里宠物们在干什么\n' +
+    '.创建活动 <活动名> - 创建一个群活动\n' +
+    '.报名活动 <活动名> - 送宠物参加活动\n' +
+    '.活动结算 <活动名> - (创建者)结算活动\n' +
+    '.查看活动 - 查看当前群的活动列表\n' +
     '\n' +
-    '【活动指令】(仅限私聊)\n' +
-    '.报名活动 - 报名参加每日Event\n' +
+    '【才艺指令】(仅限私聊)\n' +
     '.才艺 <类型> - 使用生活技能\n' +
     '  类型：烹饪 / 文化 / 绘画 / 外语\n' +
     '\n' +
@@ -300,7 +320,8 @@ export const TEXT = {
     '═══ 玩法说明 ═══\n' +
     '· 每日体力有限，合理分配喂食/洗澡/才艺\n' +
     '· 送宠物上学可以学习技能，但清洁度会下降\n' +
-    '· 每天可以报名一次活动，晚上结算表演结果\n' +
+    '· 群内任何人都可以创建活动，宠物可同时参加多个活动\n' +
+    '· 活动创建者可随时结算，结算后个人结果通过.查看宠物查看\n' +
     '· 舞台技能(vocal/dance/rap)影响表演成功率\n' +
     '· 营业技能(卖腐/媚粉)影响粉丝结构\n' +
     '· 生活技能可通过".才艺"指令使用\n' +

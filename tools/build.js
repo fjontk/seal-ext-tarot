@@ -23,7 +23,12 @@ const configAll = require('./build-config');
     // config.incremental = false;
     await buildSync(config);
     const bodyText = fs.readFileSync(config.outfile);
-    const headerText = fs.readFileSync('./header.txt').toString();
+    let headerText = fs.readFileSync('./header.txt').toString();
+    // 动态替换 @timestamp 为当前 Unix 时间戳（秒）
+    headerText = headerText.replace(
+      /(@timestamp\s+)\d+/,
+      `$1${Math.floor(Date.now() / 1000)}`
+    );
     fs.writeFileSync(config.outfile, `${headerText}\n${bodyText}`);
     const timerEnd = Date.now();
     console.log(`🔨 Built in ${timerEnd - timerStart}ms.`)

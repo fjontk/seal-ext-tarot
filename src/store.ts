@@ -52,7 +52,6 @@ export interface Pet {
 
   // 每日标记
   dailyFlags: {
-    eventJoined: boolean;
     stamina: number;
     nextEventBuff: number; // 外语海外营业带来的下次Event加成
   };
@@ -61,12 +60,22 @@ export interface Pet {
   pendingMessages: string[];
 }
 
+// ---- 群活动数据 ----
+export interface GroupEvent {
+  id: string;              // 唯一ID
+  name: string;            // 活动名称
+  groupId: string;         // 所在群ID
+  creatorId: string;       // 创建者userId
+  creatorName: string;     // 创建者显示名
+  participants: string[];  // 参与宠物的userId列表
+  createdAt: number;       // 创建时间
+}
+
 // ---- 全局存储结构 ----
 export interface StorageRoot {
   pets: { [userId: string]: Pet };
   schoolRegistry: string[];   // 在校宠物ID列表
-  eventRegistry: string[];    // 今日报名Event的宠物ID列表
-  lastEventSettlement: number;
+  groupEvents: { [groupId: string]: { [eventName: string]: GroupEvent } };
   lastSchoolCheck: number;
   lastDailyReset: number;
 }
@@ -80,8 +89,7 @@ function defaultStorage(): StorageRoot {
   return {
     pets: {},
     schoolRegistry: [],
-    eventRegistry: [],
-    lastEventSettlement: 0,
+    groupEvents: {},
     lastSchoolCheck: 0,
     lastDailyReset: 0,
   };
@@ -163,7 +171,6 @@ export function createPet(
     },
     fans: { cpFans: 0, soloFans: 0, toxicFans: 0, extraFans: 0 },
     dailyFlags: {
-      eventJoined: false,
       stamina: GAME.MAX_STAMINA,
       nextEventBuff: 0,
     },
@@ -309,12 +316,10 @@ export function resetDaily(): void {
   const data = loadData();
   for (const userId of Object.keys(data.pets)) {
     data.pets[userId].dailyFlags = {
-      eventJoined: false,
       stamina: GAME.MAX_STAMINA,
       nextEventBuff: 0,
     };
   }
-  data.eventRegistry = [];
   data.lastDailyReset = Date.now();
   saveData(data);
 }
@@ -369,106 +374,153 @@ export function runSchoolPatrol(hygieneLimit: number): PatrolResult {
   return result;
 }
 
-// ---- Event 结算 ----
+// ---- 群活动系统 ----
+
+/** 获取指定群的所有活动 */
+export function getGroupEvents(groupId: string): { [eventName: string]: GroupEvent } {
+  const data = loadData();
+  return data.groupEvents[groupId] || {};
+}
+
+/** 创建群活动，返回创建的活动或 null（同名活动已存在） */
+export function createGroupEvent(
+  groupId: string,
+  eventName: string,
+  creatorId: string,
+  creatorName: string,
+): GroupEvent | null {
+  const data = loadData();
+  if (!data.groupEvents[groupId]) {
+    data.groupEvents[groupId] = {};
+  }
+  if (data.groupEvents[groupId][eventName]) {
+    return null; // 同名活动已存在
+  }
+  const event: GroupEvent = {
+    id: `${groupId}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    name: eventName,
+    groupId,
+    creatorId,
+    creatorName,
+    participants: [],
+    createdAt: Date.now(),
+  };
+  data.groupEvents[groupId][eventName] = event;
+  saveData(data);
+  return event;
+}
+
+/** 报名群活动，返回状态码 */
+export function joinGroupEvent(
+  groupId: string,
+  eventName: string,
+  userId: string,
+): 'ok' | 'not_found' | 'already_joined' | 'not_home' | 'no_pet' {
+  const data = loadData();
+  const events = data.groupEvents[groupId];
+  if (!events || !events[eventName]) return 'not_found';
+
+  const pet = data.pets[userId];
+  if (!pet) return 'no_pet';
+  if (pet.location === 'school') return 'not_home';
+
+  const event = events[eventName];
+  if (event.participants.includes(userId)) return 'already_joined';
+
+  event.participants.push(userId);
+  saveData(data);
+  return 'ok';
+}
 
 export interface EventResult {
   petId: string;
   petName: string;
   result: 'great_success' | 'success' | 'normal' | 'fail' | 'great_fail';
   fansDelta: number;
-  groupMembers: string[]; // 同组宠物名称
 }
 
-/** 将宠物分组 */
-function groupPets(ids: string[]): string[][] {
-  if (ids.length === 0) return [];
-  if (ids.length === 1) return [ids];
-
-  const shuffled = [...ids].sort(() => Math.random() - 0.5);
-  const groups: string[][] = [];
-  let i = 0;
-
-  while (i < shuffled.length) {
-    const remaining = shuffled.length - i;
-    if (remaining <= 3) {
-      groups.push(shuffled.slice(i));
-      break;
-    }
-    const size = Math.min(Math.floor(Math.random() * 3) + 1, remaining);
-    groups.push(shuffled.slice(i, i + size));
-    i += size;
-  }
-  return groups;
+export interface GroupEventSettlement {
+  eventName: string;
+  totalFans: number;
+  perCapitaFans: number;
+  participantCount: number;
+  success: boolean;
+  results: EventResult[];
 }
 
-/** 执行 Event 结算 */
-export function settleEvents(): EventResult[] {
+/** 结算群活动，返回结算结果或 null（活动不存在） */
+export function settleGroupEvent(groupId: string, eventName: string): GroupEventSettlement | null {
   const data = loadData();
-  if (data.eventRegistry.length === 0) return [];
+  const events = data.groupEvents[groupId];
+  if (!events || !events[eventName]) return null;
 
-  const groups = groupPets(data.eventRegistry);
+  const event = events[eventName];
   const results: EventResult[] = [];
+  let totalFans = 0;
 
-  for (const group of groups) {
-    const groupNames: string[] = [];
-    for (const petId of group) {
-      const pet = data.pets[petId];
-      if (pet) groupNames.push(getFullPetName(pet));
+  for (const petId of event.participants) {
+    const pet = data.pets[petId];
+    if (!pet) continue;
+
+    // 计算成功率
+    const stageAvg = (pet.skills.vocal + pet.skills.dance + pet.skills.rap) / 3;
+    let successChance = Math.min(95, stageAvg * 2 + 10);
+    successChance += pet.dailyFlags.nextEventBuff * 100;
+    if (pet.stress > 50) {
+      successChance *= 0.8;
     }
 
-    for (const petId of group) {
-      const pet = data.pets[petId];
-      if (!pet) continue;
+    const roll = Math.floor(Math.random() * 100) + 1;
+    let result: EventResult['result'];
+    let fansDelta: number;
 
-      // 计算成功率
-      const stageAvg = (pet.skills.vocal + pet.skills.dance + pet.skills.rap) / 3;
-      let successChance = Math.min(95, stageAvg * 2 + 10); // 基础10%，技能加成
-      successChance += pet.dailyFlags.nextEventBuff * 100;
-      if (pet.stress > 50) {
-        successChance *= 0.8; // 高压力惩罚
-      }
-
-      const roll = Math.floor(Math.random() * 100) + 1;
-      let result: EventResult['result'];
-      let fansDelta: number;
-
-      if (roll <= successChance * 0.3) {
-        result = 'great_success';
-        fansDelta = GAME.EVENT_FANS_GREAT_SUCCESS;
-      } else if (roll <= successChance) {
-        result = 'success';
-        fansDelta = GAME.EVENT_FANS_SUCCESS;
-      } else if (roll <= successChance * 1.3) {
-        result = 'normal';
-        fansDelta = GAME.EVENT_FANS_NORMAL;
-      } else if (roll <= successChance * 1.8) {
-        result = 'fail';
-        fansDelta = GAME.EVENT_FANS_FAIL;
-      } else {
-        result = 'great_fail';
-        fansDelta = GAME.EVENT_FANS_GREAT_FAIL;
-      }
-
-      // 应用结果
-      pet.fans.extraFans += fansDelta;
-      pet.stress = Math.min(100, pet.stress + GAME.EVENT_STRESS_GAIN);
-      pet.dailyFlags.nextEventBuff = 0; // 用完后清除
-
-      // 生成通知
-      const groupInfo = group.length === 1
-        ? `🎙️ ${getFullPetName(pet)}进行了Solo表演！`
-        : `🎶 ${groupNames.join('、')}组成了临时团体一起表演！`;
-      const resultText = formatEventResult(getFullPetName(pet), result, fansDelta);
-      pet.pendingMessages.push(`${groupInfo}\n${resultText}`);
-
-      results.push({ petId, petName: getFullPetName(pet), result, fansDelta, groupMembers: groupNames });
+    if (roll <= successChance * 0.3) {
+      result = 'great_success';
+      fansDelta = GAME.EVENT_FANS_GREAT_SUCCESS;
+    } else if (roll <= successChance) {
+      result = 'success';
+      fansDelta = GAME.EVENT_FANS_SUCCESS;
+    } else if (roll <= successChance * 1.3) {
+      result = 'normal';
+      fansDelta = GAME.EVENT_FANS_NORMAL;
+    } else if (roll <= successChance * 1.8) {
+      result = 'fail';
+      fansDelta = GAME.EVENT_FANS_FAIL;
+    } else {
+      result = 'great_fail';
+      fansDelta = GAME.EVENT_FANS_GREAT_FAIL;
     }
+
+    // 应用结果
+    pet.fans.extraFans += fansDelta;
+    pet.stress = Math.min(100, pet.stress + GAME.EVENT_STRESS_GAIN);
+    pet.dailyFlags.nextEventBuff = 0;
+
+    // 个人通知写入 pendingMessages
+    const resultText = formatEventResult(getFullPetName(pet), result, fansDelta);
+    pet.pendingMessages.push(`📢 活动「${eventName}」已结算！\n${resultText}`);
+
+    results.push({ petId, petName: getFullPetName(pet), result, fansDelta });
+    totalFans += fansDelta;
   }
 
-  data.eventRegistry = [];
-  data.lastEventSettlement = Date.now();
+  // 删除已结算的活动
+  delete data.groupEvents[groupId][eventName];
+  if (Object.keys(data.groupEvents[groupId]).length === 0) {
+    delete data.groupEvents[groupId];
+  }
   saveData(data);
-  return results;
+
+  const count = results.length;
+  const perCapita = count > 0 ? totalFans / count : 0;
+  return {
+    eventName,
+    totalFans,
+    perCapitaFans: parseFloat(perCapita.toFixed(1)),
+    participantCount: count,
+    success: perCapita > 0,
+    results,
+  };
 }
 
 function formatEventResult(name: string, result: EventResult['result'], fans: number): string {
